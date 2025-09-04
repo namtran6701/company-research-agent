@@ -14,6 +14,49 @@ version_compare() {
 
 echo -e "${BOLD}🚀 Welcome to the Agentic Company Researcher Setup!${NC}\n"
 
+# Enforce Python 3.12 only
+PYTHON_REQUIRED_VERSION="3.12"
+PYTHON_BIN_ENV=${PYTHON_BIN:-}
+
+# Resolve a Python 3.12 interpreter
+resolve_python_312() {
+    # If user specified a binary, ensure it is 3.12
+    if [ -n "$PYTHON_BIN_ENV" ] && command -v "$PYTHON_BIN_ENV" >/dev/null 2>&1; then
+        local v
+        v=$($PYTHON_BIN_ENV -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo "")
+        if [ "$v" = "$PYTHON_REQUIRED_VERSION" ]; then
+            echo "$PYTHON_BIN_ENV"; return 0
+        else
+            echo "❌ PYTHON_BIN ($PYTHON_BIN_ENV) is version $v; Python $PYTHON_REQUIRED_VERSION is required." >&2
+            return 1
+        fi
+    fi
+
+    # Try common 3.12 candidates
+    for candidate in python3.12 python312 python-3.12; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            echo "$candidate"; return 0
+        fi
+    done
+
+    # Fallback to python3 only if it is 3.12
+    if command -v python3 >/dev/null 2>&1; then
+        local v
+        v=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo "")
+        if [ "$v" = "$PYTHON_REQUIRED_VERSION" ]; then
+            echo "python3"; return 0
+        fi
+    fi
+
+    return 1
+}
+
+PYTHON_BIN=$(resolve_python_312) || {
+    echo "❌ Could not find Python $PYTHON_REQUIRED_VERSION on PATH."
+    echo "Please install Python $PYTHON_REQUIRED_VERSION (e.g., via pyenv: 'pyenv install 3.12.6 && pyenv local 3.12.6') and rerun."
+    exit 1
+}
+
 # Check if uv is installed
 echo -e "${BLUE}Checking for uv (Python package installer)...${NC}"
 if command -v uv >/dev/null 2>&1; then
@@ -25,20 +68,20 @@ else
     use_uv=false
 fi
 
-# Check if Python 3.11+ is installed
-echo -e "\n${BLUE}Checking Python version...${NC}"
-if command -v python3 >/dev/null 2>&1; then
-    python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-    if [ "$(version_compare "$python_version")" -ge "$(version_compare "3.11")" ]; then
-        echo -e "${GREEN}✓ Python $python_version is installed${NC}"
+# Check if Python 3.12 is installed
+echo -e "\n${BLUE}Checking Python version (${PYTHON_BIN})...${NC}"
+if command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    python_version=$($PYTHON_BIN -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+    if [ "$python_version" = "$PYTHON_REQUIRED_VERSION" ]; then
+        echo -e "${GREEN}✓ Python $python_version detected at: $(command -v "$PYTHON_BIN")${NC}"
     else
-        echo "❌ Python 3.11 or higher is required. Current version: $python_version"
-        echo "Please install Python 3.11 or higher from https://www.python.org/downloads/"
+        echo "❌ Python $PYTHON_REQUIRED_VERSION is required. Current version: $python_version (at $(command -v "$PYTHON_BIN"))"
+        echo "Please install Python $PYTHON_REQUIRED_VERSION from https://www.python.org/downloads/ or via pyenv."
         exit 1
     fi
 else
-    echo "❌ Python 3 is not installed"
-    echo "Please install Python 3.11 or higher from https://www.python.org/downloads/"
+    echo "❌ Python interpreter not found: $PYTHON_BIN"
+    echo "Please install Python $PYTHON_REQUIRED_VERSION and/or set PYTHON_BIN=/path/to/python3.12"
     exit 1
 fi
 
@@ -71,7 +114,8 @@ use_venv=${use_venv:-Y}
 if [[ $use_venv =~ ^[Yy]$ ]]; then
     if [ "$use_uv" = true ]; then
         echo -e "\n${BLUE}Setting up Python virtual environment with uv...${NC}"
-        uv venv .venv
+        # Always use Python 3.12
+        uv venv --python "$PYTHON_BIN" .venv
         source .venv/bin/activate
         echo -e "${GREEN}✓ Virtual environment created and activated with uv${NC}"
 
@@ -81,7 +125,8 @@ if [[ $use_venv =~ ^[Yy]$ ]]; then
         echo -e "${GREEN}✓ Python dependencies installed${NC}"
     else
         echo -e "\n${BLUE}Setting up Python virtual environment with pip...${NC}"
-        python3 -m venv .venv
+        # Always use Python 3.12
+        "$PYTHON_BIN" -m venv .venv
         source .venv/bin/activate
         echo -e "${GREEN}✓ Virtual environment created and activated${NC}"
 
