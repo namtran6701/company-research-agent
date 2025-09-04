@@ -1,6 +1,8 @@
 # Environment and secrets
 .env
 reports/*
+AGENTS.md
+CLAUDE.md
 
 # Python
 __pycache__/
