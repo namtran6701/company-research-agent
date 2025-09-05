@@ -880,8 +880,8 @@ function App() {
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-8 mb-8">
             {/* Logo Section */}
             <div className="flex-shrink-0">
-              <div className="h-12 md:h-16 flex items-center">
-                <h2 className="text-2xl md:text-3xl font-bold text-primary">SalesFactory.AI</h2>
+              <div className="h-16 md:h-20 flex items-center">
+                <img src="/sfalogo.png" alt="SalesFactory.AI" className="h-full w-auto object-cover object-center" style={{ objectPosition: '50% 75%' }} />
               </div>
             </div>
             

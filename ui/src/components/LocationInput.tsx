@@ -6,6 +6,8 @@ interface LocationInputProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 declare global {
@@ -19,7 +21,7 @@ declare global {
 // classic Places Autocomplete on a regular input element.
 // This avoids the web component's built-in icons and shadow DOM
 // styling conflicts (which made text appear invisible and layout messy).
-const LocationInput: React.FC<LocationInputProps> = ({ value, onChange, className }) => {
+const LocationInput: React.FC<LocationInputProps> = ({ value, onChange, className, onFocus, onBlur }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
   const [isApiLoaded, setIsApiLoaded] = useState(false);
@@ -82,6 +84,8 @@ const LocationInput: React.FC<LocationInputProps> = ({ value, onChange, classNam
         type="text"
         value={value}
         onChange={handleInputChange}
+        onFocus={onFocus}
+        onBlur={onBlur}
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.preventDefault();
         }}
@@ -95,4 +99,3 @@ const LocationInput: React.FC<LocationInputProps> = ({ value, onChange, classNam
 };
 
 export default LocationInput;
-

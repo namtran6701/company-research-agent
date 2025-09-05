@@ -23,6 +23,18 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
   const [companyHq, setCompanyHq] = useState('');
   const [companyIndustry, setCompanyIndustry] = useState('');
 
+  // Animated example text state
+  const EXAMPLE_WORDS = ['Tesla', 'Apple', 'Nvidia', 'Google'];
+  const EXAMPLE_DETAILS: Record<string, ExampleCompany> = {
+    Tesla: { name: 'Tesla', url: 'tesla.com', hq: 'Austin, TX', industry: 'Automotive & Energy' },
+    Apple: { name: 'Apple', url: 'apple.com', hq: 'Cupertino, CA', industry: 'Consumer Electronics' },
+    Nvidia: { name: 'Nvidia', url: 'nvidia.com', hq: 'Santa Clara, CA', industry: 'Semiconductors' },
+    Google: { name: 'Google', url: 'google.com', hq: 'Mountain View, CA', industry: 'Internet Services' }
+  };
+  const [exampleIndex, setExampleIndex] = useState(0); // initial shows Tesla
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -45,6 +57,37 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
     setCompanyIndustry(example.industry);
   };
 
+  // Click helper when we only have a name
+  const handleExampleClickByName = (name: string) => {
+    // Prefer our detailed mapping for the cycling examples
+    const mapped = EXAMPLE_DETAILS[name as keyof typeof EXAMPLE_DETAILS];
+    if (mapped) {
+      handleExampleClick(mapped);
+      return;
+    }
+    // Fallback: look in shared examples list
+    const found = EXAMPLE_COMPANIES.find((e) => e.name.toLowerCase() === name.toLowerCase());
+    if (found) return handleExampleClick(found);
+    // Last resort: only set name
+    setCompanyName(name);
+    setCompanyUrl('');
+    setCompanyHq('');
+    setCompanyIndustry('');
+  };
+
+  // Cycle example words every 3s with a smooth transition
+  React.useEffect(() => {
+    if (isPaused) return; // pause animation when user interacts
+    const interval = setInterval(() => {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setExampleIndex((prev) => (prev + 1) % EXAMPLE_WORDS.length);
+        setIsAnimating(false);
+      }, 220);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
   return (
     <Card className="p-8 shadow-card bg-card border border-border" id="company-search">
       <div className="space-y-6">
@@ -59,10 +102,20 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => handleExampleClick(EXAMPLE_COMPANIES.find(e => e.name === 'Tesla') || EXAMPLE_COMPANIES[0])}
-              className="text-primary hover:text-primary/80"
+              onClick={() => handleExampleClickByName(EXAMPLE_WORDS[exampleIndex])}
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+              className="text-primary hover:text-primary/80 text-base md:text-lg font-medium"
             >
-              ⚡ Try an example: Tesla →
+              ⚡ Try an example:
+              <span
+                className={`ml-1 inline-block transition-all duration-300 ease-in-out ${
+                  isAnimating ? 'opacity-0 -translate-y-1' : 'opacity-100 translate-y-0'
+                }`}
+              >
+                {EXAMPLE_WORDS[exampleIndex]}
+              </span>
+              <span className="ml-1">→</span>
             </Button>
           </div>
         </div>
@@ -81,7 +134,12 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
                   type="text"
                   placeholder="Enter company name"
                   value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
+                  onFocus={() => setIsPaused(true)}
+                  onBlur={() => setIsPaused(false)}
+                  onChange={(e) => {
+                    setIsPaused(true);
+                    setCompanyName(e.target.value);
+                  }}
                   className="pl-10 h-12"
                   disabled={isSearching}
                 />
@@ -100,7 +158,12 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
                   type="text"
                   placeholder="example.com"
                   value={companyUrl}
-                  onChange={(e) => setCompanyUrl(e.target.value)}
+                  onFocus={() => setIsPaused(true)}
+                  onBlur={() => setIsPaused(false)}
+                  onChange={(e) => {
+                    setIsPaused(true);
+                    setCompanyUrl(e.target.value);
+                  }}
                   className="pl-10 h-12"
                   disabled={isSearching}
                 />
@@ -114,7 +177,12 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
               </Label>
               <LocationInput
                 value={companyHq}
-                onChange={setCompanyHq}
+                onFocus={() => setIsPaused(true)}
+                onBlur={() => setIsPaused(false)}
+                onChange={(v) => {
+                  setIsPaused(true);
+                  setCompanyHq(v);
+                }}
                 className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 pl-10 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
               />
             </div>
@@ -131,7 +199,12 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
                   type="text"
                   placeholder="e.g. Technology, Healthcare"
                   value={companyIndustry}
-                  onChange={(e) => setCompanyIndustry(e.target.value)}
+                  onFocus={() => setIsPaused(true)}
+                  onBlur={() => setIsPaused(false)}
+                  onChange={(e) => {
+                    setIsPaused(true);
+                    setCompanyIndustry(e.target.value);
+                  }}
                   className="pl-10 h-12"
                   disabled={isSearching}
                 />
