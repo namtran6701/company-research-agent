@@ -364,28 +364,19 @@ Return the cleaned report in flawless markdown format. No explanations or commen
             buffer = ""
             
             async for chunk in response:
-                if chunk.choices[0].finish_reason == "stop":
-                    websocket_manager = state.get('websocket_manager')
-                    if websocket_manager and buffer:
-                        job_id = state.get('job_id')
-                        if job_id:
-                            await websocket_manager.send_status_update(
-                                job_id=job_id,
-                                status="report_chunk",
-                                message="Formatting final report",
-                                result={
-                                    "chunk": buffer,
-                                    "step": "Editor"
-                                }
-                            )
-                    break
+                # Safe access to chunk data
+                if not chunk.choices:
+                    continue
                     
-                chunk_text = chunk.choices[0].delta.content
+                choice = chunk.choices[0]
+                chunk_text = choice.delta.content if hasattr(choice.delta, 'content') else None
+                
                 if chunk_text:
                     accumulated_text += chunk_text
                     buffer += chunk_text
                     
-                    if any(char in buffer for char in ['.', '!', '?', '\n']) and len(buffer) > 10:
+                    # Send chunks more frequently for better streaming experience
+                    if len(buffer) >= 50 or any(delimiter in buffer for delimiter in ['\n\n', '. ', '! ', '? ', '\n#']):
                         if websocket_manager := state.get('websocket_manager'):
                             if job_id := state.get('job_id'):
                                 await websocket_manager.send_status_update(
@@ -398,6 +389,21 @@ Return the cleaned report in flawless markdown format. No explanations or commen
                                     }
                                 )
                         buffer = ""
+                
+                # Handle completion and send any remaining buffer
+                if hasattr(choice, 'finish_reason') and choice.finish_reason == "stop":
+                    if websocket_manager := state.get('websocket_manager'):
+                        if buffer and (job_id := state.get('job_id')):
+                            await websocket_manager.send_status_update(
+                                job_id=job_id,
+                                status="report_chunk",
+                                message="Formatting final report",
+                                result={
+                                    "chunk": buffer,
+                                    "step": "Editor"
+                                }
+                            )
+                    break
             
             return (accumulated_text or "").strip()
         except Exception as e:
