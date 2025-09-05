@@ -53,10 +53,15 @@ class FinancialAnalyst(BaseResearcher):
             financial_data = {}
             if site_scrape := state.get('site_scrape'):
                 company_url = state.get('company_url', 'company-website')
+                raw = site_scrape.get('raw_content') if isinstance(site_scrape, dict) else site_scrape
+                title = site_scrape.get('title') if isinstance(site_scrape, dict) else state.get('company', 'Unknown Company')
                 financial_data[company_url] = {
-                    'title': state.get('company', 'Unknown Company'),
-                    'raw_content': site_scrape,
-                    'query': f'Financial information on {company}'
+                    'title': title or state.get('company', 'Unknown Company'),
+                    'raw_content': raw or '',
+                    'query': f'Financial information on {company}',
+                    'source': 'site_scrape',
+                    'score': 1.0,
+                    'url': company_url
                 }
 
             for query in queries:

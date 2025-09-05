@@ -21,11 +21,11 @@ else:
 if not os.getenv("TAVILY_API_KEY"):
     logger.warning("TAVILY_API_KEY environment variable is not set.")
 
-if not os.getenv("OPENAI_API_KEY"):
-    logger.warning("OPENAI_API_KEY environment variable is not set.")
+if not os.getenv("AZURE_OPENAI_KEY"):
+    logger.warning("AZURE_OPENAI_KEY environment variable is not set.")
 
-if not os.getenv("GEMINI_API_KEY"):
-    logger.warning("GEMINI_API_KEY environment variable is not set.")
+if not os.getenv("AZURE_OPENAI_ENDPOINT"):
+    logger.warning("AZURE_OPENAI_ENDPOINT environment variable is not set.")
 
 from .graph import Graph
 

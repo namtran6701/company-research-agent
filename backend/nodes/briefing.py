@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Any, Dict, List, Union
 
-import google.generativeai as genai
+from openai import AsyncAzureOpenAI
 
 from ..classes import ResearchState
 
@@ -14,13 +14,20 @@ class Briefing:
     
     def __init__(self) -> None:
         self.max_doc_length = 8000  # Maximum document content length
-        self.gemini_key = os.getenv("GEMINI_API_KEY")
-        if not self.gemini_key:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
+        self.azure_openai_key = os.getenv("AZURE_OPENAI_KEY")
+        self.azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         
-        # Configure Gemini
-        genai.configure(api_key=self.gemini_key)
-        self.gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+        if not self.azure_openai_key:
+            raise ValueError("AZURE_OPENAI_KEY environment variable is not set")
+        if not self.azure_openai_endpoint:
+            raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
+        
+        # Configure Azure OpenAI
+        self.openai_client = AsyncAzureOpenAI(
+            api_key=self.azure_openai_key,
+            azure_endpoint=self.azure_openai_endpoint,
+            api_version="2025-04-01-preview"
+        )
 
     async def generate_category_briefing(
         self, docs: Union[Dict[str, Any], List[Dict[str, Any]]], 
@@ -181,8 +188,22 @@ Analyze the following documents and extract key information. Provide only the br
         
         try:
             logger.info("Sending prompt to LLM")
-            response = self.gemini_model.generate_content(prompt)
-            content = response.text.strip()
+            response = await self.openai_client.chat.completions.create(
+                model="gpt-4.1",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert research analyst that creates focused, structured briefings based on provided documents."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0,
+                stream=False
+            )
+            content = response.choices[0].message.content.strip()
             if not content:
                 logger.error(f"Empty response from LLM for {category} briefing")
                 return {'content': ''}

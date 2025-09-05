@@ -34,10 +34,15 @@ class NewsScanner(BaseResearcher):
         if site_scrape := state.get('site_scrape'):
             msg.append("\n📊 Including site scrape data in company analysis...")
             company_url = state.get('company_url', 'company-website')
+            raw = site_scrape.get('raw_content') if isinstance(site_scrape, dict) else site_scrape
+            title = site_scrape.get('title') if isinstance(site_scrape, dict) else state.get('company', 'Unknown Company')
             news_data[company_url] = {
-                'title': state.get('company', 'Unknown Company'),
-                'raw_content': site_scrape,
-                'query': f'News and announcements about {company}'  # Add a default query for site scrape
+                'title': title or state.get('company', 'Unknown Company'),
+                'raw_content': raw or '',
+                'query': f'News and announcements about {company}',
+                'source': 'site_scrape',
+                'score': 1.0,
+                'url': company_url
             }
         
         # Perform additional research with recent time filter

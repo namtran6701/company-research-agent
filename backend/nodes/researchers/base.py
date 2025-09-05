@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List
 
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI
 from tavily import AsyncTavilyClient
 
 from ...classes import ResearchState
@@ -15,13 +15,18 @@ logger = logging.getLogger(__name__)
 class BaseResearcher:
     def __init__(self):
         tavily_key = os.getenv("TAVILY_API_KEY")
-        openai_key = os.getenv("OPENAI_API_KEY")
+        azure_openai_key = os.getenv("AZURE_OPENAI_KEY")
+        azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         
-        if not tavily_key or not openai_key:
+        if not tavily_key or not azure_openai_key or not azure_openai_endpoint:
             raise ValueError("Missing API keys")
             
         self.tavily_client = AsyncTavilyClient(api_key=tavily_key)
-        self.openai_client = AsyncOpenAI(api_key=openai_key)
+        self.openai_client = AsyncAzureOpenAI(
+            api_key=azure_openai_key,
+            azure_endpoint=azure_openai_endpoint,
+            api_version="2025-04-01-preview"
+        )
         self.analyst_type = "base_researcher"  # Default type
 
     @property
@@ -46,7 +51,7 @@ class BaseResearcher:
             logger.info(f"Generating queries for {company} as {self.analyst_type}")
             
             response = await self.openai_client.chat.completions.create(
-                model="gpt-4.1-mini",
+                model="gpt-4.1",
                 messages=[
                     {
                         "role": "system",
@@ -68,6 +73,9 @@ class BaseResearcher:
             current_query_number = 1
 
             async for chunk in response:
+                if not chunk.choices:
+                    continue
+                    
                 if chunk.choices[0].finish_reason == "stop":
                     break
                     
@@ -92,9 +100,9 @@ class BaseResearcher:
                     # If a newline is detected, treat it as a complete query.
                     if '\n' in current_query:
                         parts = current_query.split('\n')
-                        current_query = parts[-1]  # The last part is the start of the next query.
+                        current_query = parts[-1] if parts else ""  # The last part is the start of the next query.
                         
-                        for query in parts[:-1]:
+                        for query in parts[:-1] if len(parts) > 1 else []:
                             query = query.strip()
                             if query:
                                 queries.append(query)
