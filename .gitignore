@@ -3,7 +3,7 @@
 reports/*
 AGENTS.md
 CLAUDE.md
-
+company-insight-rover/
 # Python
 __pycache__/
 *.py[cod]

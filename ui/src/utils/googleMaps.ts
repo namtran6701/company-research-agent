@@ -1,8 +1,8 @@
 let loadPromise: Promise<void> | null = null;
 
 export function loadGoogleMapsScript(): Promise<void> {
-  // Already available
-  if (typeof window !== 'undefined' && (window as any).google?.maps?.places) {
+  // Check if Google Maps is already loaded
+  if (typeof window !== 'undefined' && (window as any).google?.maps) {
     return Promise.resolve();
   }
 
@@ -19,7 +19,7 @@ export function loadGoogleMapsScript(): Promise<void> {
     // Avoid duplicate script tags
     if (document.getElementById('google-maps-js')) {
       const checkReady = () => {
-        if ((window as any).google?.maps?.places) {
+        if ((window as any).google?.maps) {
           resolve();
         } else {
           setTimeout(checkReady, 100);
@@ -37,9 +37,10 @@ export function loadGoogleMapsScript(): Promise<void> {
     script.id = 'google-maps-js';
     script.async = true;
     script.defer = true;
+    // Load with both legacy places and the new places library
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
       apiKey
-    )}&libraries=places&v=weekly&callback=initGoogleMapsCallback`;
+    )}&libraries=places&v=weekly&loading=async&callback=initGoogleMapsCallback`;
     script.onerror = () => reject(new Error('Failed to load Google Maps JS'));
     document.head.appendChild(script);
   });

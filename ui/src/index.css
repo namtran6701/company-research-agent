@@ -4,15 +4,127 @@
 @tailwind components;
 @tailwind utilities;
 
+/* SalesFactory.ai Design System 
+Modern, clean, and professional with coral accents for AI-powered business tools
+All colors MUST be HSL.
+*/
+
 @layer base {
+  :root {
+    /* Clean, modern palette matching SalesFactory.ai */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 13%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 13%;
+
+    /* SalesFactory coral primary */
+    --primary: 12 100% 69%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 12 100% 75%;
+
+    /* Sophisticated neutral secondary */
+    --secondary: 20 6% 96%;
+    --secondary-foreground: 0 0% 13%;
+
+    --muted: 20 6% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Soft accent for highlights */
+    --accent: 20 6% 96%;
+    --accent-foreground: 0 0% 13%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 6% 93%;
+    --input: 20 6% 96%;
+    --ring: 12 100% 69%;
+
+    /* Success color for completed research */
+    --success: 120 60% 50%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning for in-progress */
+    --warning: 35 90% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Clean, modern gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(12 100% 69%), hsl(12 100% 75%));
+    --gradient-hero: linear-gradient(135deg, hsl(20 6% 97%) 0%, hsl(20 6% 95%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(20 6% 98%) 100%);
+
+    /* Modern, clean shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(12 100% 69% / 0.1);
+    --shadow-glow: 0 0 40px hsl(12 100% 75% / 0.15);
+    --shadow-card: 0 4px 20px -4px hsl(20 6% 85% / 0.3);
+
+    /* Smooth transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Modern dark mode matching SalesFactory theme */
+    --background: 0 0% 9%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 12 100% 69%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 12 100% 75%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 0 0% 16%;
+    --accent-foreground: 12 100% 69%;
+
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 9%;
+
+    --success: 120 60% 55%;
+    --success-foreground: 0 0% 9%;
+
+    --warning: 35 90% 60%;
+    --warning-foreground: 0 0% 9%;
+
+    --border: 0 0% 16%;
+    --input: 0 0% 14%;
+    --ring: 12 100% 69%;
+
+    /* Dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(12 100% 69%), hsl(12 100% 75%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 11%) 0%, hsl(0 0% 9%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 9%) 0%, hsl(0 0% 11%) 100%);
+
+    /* Dark mode shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(12 100% 69% / 0.2);
+    --shadow-glow: 0 0 40px hsl(12 100% 75% / 0.25);
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 5% / 0.6);
+  }
+
+  * {
+    @apply border-border;
+  }
+
   body {
-    @apply bg-gray-900;
+    @apply bg-background text-foreground;
     font-family: "DM Sans", sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
-    background-size: 24px 24px;
-    background-position: center center;
   }
 
   h1 {
@@ -52,7 +164,7 @@
 }
 
 @layer components {
-  .glass {
-    @apply bg-gray-900/40 backdrop-blur-md border border-gray-700/50;
+  .hover-scale {
+    @apply transition-transform duration-300 hover:scale-105;
   }
 }

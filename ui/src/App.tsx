@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from "react";
-import Header from './components/Header';
+import React, { useState, useEffect, useRef } from "react";
+import { Search, Brain, Zap, Users, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import CompanySearch from './components/CompanySearch';
 import ResearchBriefings from './components/ResearchBriefings';
 import CurationExtraction from './components/CurationExtraction';
 import ResearchQueries from './components/ResearchQueries';
 import ResearchStatus from './components/ResearchStatus';
 import ResearchReport from './components/ResearchReport';
-import ResearchForm from './components/ResearchForm';
 import {ResearchOutput, DocCount,DocCounts, EnrichmentCounts, ResearchState, ResearchStatusType} from './types';
 import { checkForFinalReport } from './utils/handlers';
 import { colorAnimation, dmSansStyle, glassStyle, fadeInAnimation } from './styles';
@@ -28,8 +30,11 @@ const dmSansStyleElement = document.createElement('style');
 dmSansStyleElement.textContent = dmSansStyle;
 document.head.appendChild(dmSansStyleElement);
 
-function App() {
+type AppState = 'search' | 'researching' | 'completed';
 
+function App() {
+  const [state, setState] = useState<AppState>('search');
+  const [companyName, setCompanyName] = useState('');
   const [isResearching, setIsResearching] = useState(false);
   const [status, setStatus] = useState<ResearchStatusType | null>(null);
   const [output, setOutput] = useState<ResearchOutput | null>(null);
@@ -819,47 +824,236 @@ function App() {
     };
   }, []);
 
+  // Simulate research process for the new design
+  const simulateResearch = async (companyData: {
+    name: string;
+    url: string;
+    hq: string;
+    industry: string;
+  }) => {
+    setState('researching');
+    setCompanyName(companyData.name);
+    setOriginalCompanyName(companyData.name);
+    
+    // Map the company data to the format expected by handleFormSubmit
+    const formData = {
+      companyName: companyData.name,
+      companyUrl: companyData.url,
+      companyHq: companyData.hq,
+      companyIndustry: companyData.industry
+    };
+    
+    // Start the actual research using existing handler
+    await handleFormSubmit(formData);
+  };
+
+  const handleNewSearch = () => {
+    setState('search');
+    setCompanyName('');
+    resetResearch();
+  };
+
+  const handleDownloadReport = () => {
+    handleGeneratePdf();
+  };
+
+  const handleShareReport = () => {
+    handleCopyToClipboard();
+  };
+
+  // Update state transitions based on research progress
+  useEffect(() => {
+    if (isResearching && state === 'search') {
+      setState('researching');
+    } else if (isComplete && state === 'researching') {
+      setState('completed');
+    }
+  }, [isResearching, isComplete, state]);
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white via-gray-50 to-white p-8 relative">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(70,139,255,0.35)_1px,transparent_0)] bg-[length:24px_24px] bg-center"></div>
-      <div className="max-w-5xl mx-auto space-y-8 relative">
-        {/* Header Component */}
-        <Header glassStyle={glassStyle.card} />
-
-        {/* Form Section */}
-        <ResearchForm 
-          onSubmit={handleFormSubmit}
-          isResearching={isResearching}
-          glassStyle={glassStyle}
-          loaderColor={loaderColor}
-        />
-
-        {/* Error Message */}
-        {error && (
-          <div 
-            className={`${glassStyle.card} border-[#FE363B]/30 bg-[#FE363B]/10 ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
-          >
-            <p className="text-[#FE363B]">{error}</p>
+    <div className="min-h-screen bg-gradient-hero">
+      {/* Innovative Hero Section with Integrated Header */}
+      <section className="relative overflow-hidden bg-gradient-hero">
+        {/* Main Content Container */}
+        <div className="relative container mx-auto px-6 py-6">
+          {/* Top Row - Logo and CTA */}
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-8 mb-8">
+            {/* Logo Section */}
+            <div className="flex-shrink-0">
+              <div className="h-12 md:h-16 flex items-center">
+                <h2 className="text-2xl md:text-3xl font-bold text-primary">SalesFactory.AI</h2>
+              </div>
+            </div>
+            
+            {/* CTA Section - Desktop */}
+            {state === 'search' && (
+              <div className="hidden lg:block">
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="text-lg px-8 py-4 shadow-glow animate-fade-in"
+                  onClick={() => {
+                    document.getElementById('company-search')?.scrollIntoView({ 
+                      behavior: 'smooth' 
+                    });
+                  }}
+                >
+                  <Brain className="h-5 w-5" />
+                  Start Research
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Status Box */}
-        <ResearchStatus
-          status={status}
-          error={error}
-          isComplete={isComplete}
-          currentPhase={currentPhase}
-          isResetting={isResetting}
-          glassStyle={glassStyle}
-          loaderColor={loaderColor}
-          statusRef={statusRef}
-        />
+          {/* Hero Content - Centered and Compact */}
+          <div className="max-w-5xl mx-auto text-center space-y-6">
+            <div className="space-y-4">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight animate-fade-in">
+                While Markets Shift, You
+                <br />
+                <span className="text-primary font-bold">Research</span>
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed animate-fade-in">
+                Your competitor just launched a new strategy. Industry trends shifted overnight. 
+                You research and analyze in minutes while others take weeks.
+              </p>
+            </div>
 
-        {/* Progress Components Container */}
-        <div className="space-y-12 transition-all duration-500 ease-in-out">
-          {renderProgressComponents()}
+            {/* Mobile CTA */}
+            {state === 'search' && (
+              <div className="lg:hidden animate-fade-in">
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="text-lg px-8 py-4 shadow-glow"
+                  onClick={() => {
+                    document.getElementById('company-search')?.scrollIntoView({ 
+                      behavior: 'smooth' 
+                    });
+                  }}
+                >
+                  <Brain className="h-5 w-5" />
+                  Start Research
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Feature Cards - Compact Grid */}
+          <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-5xl mx-auto">
+            <Card className="p-6 bg-card/90 backdrop-blur-sm border-border text-center hover-scale animate-fade-in">
+              <Zap className="h-10 w-10 text-primary mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Lightning Fast
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Multi-agent system processes data in parallel for rapid results
+              </p>
+            </Card>
+            
+            <Card className="p-6 bg-card/90 backdrop-blur-sm border-border text-center hover-scale animate-fade-in">
+              <Users className="h-10 w-10 text-primary mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Multi-Agent AI
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Specialized agents for company, financial, and market analysis
+              </p>
+            </Card>
+            
+            <Card className="p-6 bg-card/90 backdrop-blur-sm border-border text-center hover-scale animate-fade-in">
+              <Search className="h-10 w-10 text-primary mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Comprehensive Reports
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Detailed analysis with actionable insights and recommendations
+              </p>
+            </Card>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-6 py-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {state === 'search' && (
+            <div>
+              <CompanySearch 
+                onSearch={simulateResearch}
+                isSearching={isResearching}
+              />
+            </div>
+          )}
+
+          {state === 'researching' && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <Button 
+                  variant="outline" 
+                  onClick={handleNewSearch}
+                  className="mb-6"
+                >
+                  ← Start New Research
+                </Button>
+              </div>
+              
+              {/* Status Box */}
+              <ResearchStatus
+                status={status}
+                error={error}
+                isComplete={isComplete}
+                currentPhase={currentPhase}
+                isResetting={isResetting}
+                glassStyle={glassStyle}
+                loaderColor={loaderColor}
+                statusRef={statusRef}
+              />
+
+              {/* Error Message */}
+              {error && (
+                <div 
+                  className={`${glassStyle.card} border-[#FE363B]/30 bg-[#FE363B]/10 ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} font-['DM_Sans']`}
+                >
+                  <p className="text-[#FE363B]">{error}</p>
+                </div>
+              )}
+
+              {/* Progress Components Container */}
+              <div className="space-y-12 transition-all duration-500 ease-in-out">
+                {renderProgressComponents()}
+              </div>
+            </div>
+          )}
+
+          {state === 'completed' && output && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <Button 
+                  variant="outline" 
+                  onClick={handleNewSearch}
+                  className="mb-6"
+                >
+                  ← Research Another Company
+                </Button>
+              </div>
+              <ResearchReport 
+                output={output}
+                isResetting={isResetting}
+                glassStyle={glassStyle}
+                fadeInAnimation={fadeInAnimation}
+                loaderColor={loaderColor}
+                isGeneratingPdf={isGeneratingPdf}
+                isCopied={isCopied}
+                onCopyToClipboard={handleCopyToClipboard}
+                onGeneratePdf={handleGeneratePdf}
+              />
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
