@@ -57,7 +57,7 @@ The platform leverages separate models for optimal performance:
    - Used for generating initial category briefings
    - Efficient at maintaining context across multiple documents
 
-2. **GPT-4.1 mini** (`editor.py`):
+2. **GPT-4.1 ** (`editor.py`):
    - Specializes in precise formatting and editing tasks
    - Handles markdown structure and consistency
    - Superior at following exact formatting instructions
