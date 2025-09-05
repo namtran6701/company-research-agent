@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import LocationInput from './LocationInput';
+import { EXAMPLE_COMPANIES, type ExampleCompany } from './ExamplePopup';
 
 interface CompanySearchProps {
   onSearch: (companyData: {
@@ -37,11 +38,11 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
     });
   };
 
-  const handleExampleClick = (example: string) => {
-    setCompanyName(example);
-    setCompanyUrl('');
-    setCompanyHq('');
-    setCompanyIndustry('');
+  const handleExampleClick = (example: ExampleCompany) => {
+    setCompanyName(example.name);
+    setCompanyUrl(example.url);
+    setCompanyHq(example.hq);
+    setCompanyIndustry(example.industry);
   };
 
   return (
@@ -58,7 +59,7 @@ const CompanySearch = ({ onSearch, isSearching }: CompanySearchProps) => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => handleExampleClick('Tesla')}
+              onClick={() => handleExampleClick(EXAMPLE_COMPANIES.find(e => e.name === 'Tesla') || EXAMPLE_COMPANIES[0])}
               className="text-primary hover:text-primary/80"
             >
               ⚡ Try an example: Tesla →
