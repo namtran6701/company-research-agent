@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { loadGoogleMapsScript } from '../utils/googleMaps';
 import { MapPin } from 'lucide-react';
 
 interface LocationInputProps {
@@ -51,53 +52,23 @@ const LocationInput: React.FC<LocationInputProps> = ({ value, onChange, classNam
     }
 
     try {
-      // Use the modern PlaceAutocompleteElement if available, fallback to legacy Autocomplete
-      if (window.google.maps.places.PlaceAutocompleteElement) {
-        // Create and configure the new PlaceAutocompleteElement
-        const autocompleteElement = document.createElement('gmp-place-autocomplete');
-        autocompleteElement.setAttribute('type', 'cities');
+      // Always use legacy Google Places Autocomplete for consistent styling
+      autocompleteElementRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['(cities)'],
+      });
 
-        // Replace the input with the autocomplete element
-        const parentElement = inputRef.current.parentElement;
-        if (parentElement) {
-          parentElement.insertBefore(autocompleteElement, inputRef.current);
-          inputRef.current.style.display = 'none';
-
-          // Style the autocomplete element to match the input
-          autocompleteElement.style.width = '100%';
-          autocompleteElement.style.height = '100%';
-
-          // Listen for place selection
-          autocompleteElement.addEventListener('gmp-placeselect', (event: any) => {
-            const place = event.place;
-            if (place?.formattedAddress) {
-              onChangeRef.current(place.formattedAddress);
-            }
-          });
-
-          autocompleteElementRef.current = autocompleteElement;
-        }
-      } else {
-        // Fallback to legacy Autocomplete API
-        console.warn('Using deprecated Google Maps Autocomplete API. Consider upgrading to PlaceAutocompleteElement.');
-
-        autocompleteElementRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-          types: ['(cities)'],
+      // Add place_changed listener
+      const autocomplete = autocompleteElementRef.current;
+      if (autocomplete) {
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place?.formatted_address) {
+            onChangeRef.current(place.formatted_address);
+          }
         });
-
-        // Add place_changed listener
-        const autocomplete = autocompleteElementRef.current;
-        if (autocomplete) {
-          autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            if (place?.formatted_address) {
-              onChangeRef.current(place.formatted_address);
-            }
-          });
-        }
       }
 
-      // Style the autocomplete dropdown
+      // Style the autocomplete dropdown (legacy PAC)
       const style = document.createElement('style');
       style.textContent = `
         .pac-container {
@@ -141,11 +112,6 @@ const LocationInput: React.FC<LocationInputProps> = ({ value, onChange, classNam
         .pac-icon {
           display: none !important;
         }
-        /* Style for the new PlaceAutocompleteElement */
-        gmp-place-autocomplete {
-          width: 100% !important;
-          --gmp-place-autocomplete-font-family: "DM Sans", sans-serif !important;
-        }
       `;
       document.head.appendChild(style);
 
@@ -157,15 +123,9 @@ const LocationInput: React.FC<LocationInputProps> = ({ value, onChange, classNam
     // Cleanup
     return () => {
       if (autocompleteElementRef.current) {
-        if (window.google?.maps?.event && typeof autocompleteElementRef.current.addListener === 'function') {
-          // Legacy Autocomplete cleanup
+        // Legacy Autocomplete cleanup
+        if (window.google?.maps?.event) {
           window.google.maps.event.clearInstanceListeners(autocompleteElementRef.current);
-        } else if (autocompleteElementRef.current.remove) {
-          // Modern PlaceAutocompleteElement cleanup
-          autocompleteElementRef.current.remove();
-          if (inputRef.current) {
-            inputRef.current.style.display = '';
-          }
         }
         autocompleteElementRef.current = null;
         isInitializedRef.current = false;
