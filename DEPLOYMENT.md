@@ -77,6 +77,17 @@ from fastapi.staticfiles import StaticFiles
 # Mount static files for React assets (CSS, JS)
 app.mount("/assets", StaticFiles(directory="ui/dist/assets"), name="assets")
 
+# Serve favicon and logo files
+@app.get("/favicon.ico")
+async def get_favicon():
+    """Serve the favicon."""
+    return FileResponse("ui/dist/favicon.ico")
+
+@app.get("/sfalogo.png")
+async def get_logo():
+    """Serve the company logo."""
+    return FileResponse("ui/dist/sfalogo.png")
+
 # Serve React app at root
 @app.get("/")
 async def serve_frontend():
@@ -95,6 +106,7 @@ async def serve_react_app(full_path: str):
 - Static files mount must come after all API routes are defined
 - The catch-all route must be the very last route to avoid conflicts
 - `/assets` path matches the Vite build output structure
+- Individual routes for favicon and logo ensure proper serving of static assets
 
 ### Step 2: Create Azure Infrastructure
 
@@ -221,6 +233,7 @@ no child with platform linux/amd64 in index
 - Added `StaticFiles` import and mount for `/assets` route
 - Modified root endpoint `@app.get("/")` to serve `index.html` 
 - Added catch-all route `@app.get("/{full_path:path}")` for React Router client-side routing
+- Added specific routes for favicon and logo files
 - Ensured correct route order: API routes → static files mount → catch-all route
 
 **Key Learning**: Single-container deployments require explicit configuration for serving frontend static files.
@@ -234,13 +247,56 @@ no child with platform linux/amd64 in index
 - Used Docker ARG and ENV instructions to pass variables to Vite
 - Built separate images for placeholder and final URLs
 
-### 4. Multi-Stage Build Complexity
+### 5. Docker Build Caching and Environment Variable Updates
+
+**Problem**: When updating build-time environment variables (like Google Maps API key), the deployed application continued using old values despite successful rebuilds and deployments.
+
+**Root Cause**: 
+- Docker layer caching was preserving the frontend build stage with old environment variables
+- Using the same image tag (`latest`) meant Azure Container Apps thought it had the current image
+- Vite environment variables are baked into JavaScript bundles at build time, not runtime
+
+**Solution**: Force complete rebuild with unique tags to bypass caching:
+```bash
+# Build with unique timestamp tag and no caching
+UNIQUE_TAG="v$(date +%s)"
+docker build --platform linux/amd64 --no-cache --pull \
+  --build-arg VITE_API_URL=https://$APP_URL \
+  --build-arg VITE_WS_URL=wss://$APP_URL \
+  --build-arg VITE_GOOGLE_MAPS_API_KEY=$NEW_API_KEY \
+  -t sfcompanyresearchacr.azurecr.io/company-research:$UNIQUE_TAG .
+
+# Push with unique tag
+docker push sfcompanyresearchacr.azurecr.io/company-research:$UNIQUE_TAG
+
+# Update Container App with new image tag
+az containerapp update \
+  --name sf-company-research-app \
+  --resource-group sf-company-research \
+  --image sfcompanyresearchacr.azurecr.io/company-research:$UNIQUE_TAG
+```
+
+**Key Flags**:
+- `--no-cache`: Forces Docker to rebuild all layers from scratch
+- `--pull`: Ensures base images are pulled fresh
+- **Unique tag**: Forces Azure Container Apps to create a new revision
+
+**Verification**: Check that new JavaScript bundle contains updated values:
+```bash
+# Get new JS filename
+JS_FILE=$(curl -s https://$APP_URL/ | grep -o '/assets/index-[^"]*\.js')
+
+# Verify new environment variable is present
+curl -s https://$APP_URL$JS_FILE | grep -o "your-new-env-var-pattern"
+```
+
+### 6. Multi-Stage Build Complexity
 
 **Problem**: The application uses a complex multi-stage Dockerfile with frontend and backend stages.
 
 **Solution**:
 - Ensured build arguments are available in the correct stage (frontend-builder)
-- Maintained proper layer caching for faster rebuilds
+- Maintained proper layer caching for faster rebuilds (except when forcing no-cache)
 - Used explicit platform specification for all stages
 
 ## Security Considerations
@@ -360,6 +416,9 @@ echo "Deployment complete! Visit: https://$APP_URL"
 4. **Build arguments vs environment variables** - understand when each is needed
 5. **Monitor resource creation** - some Azure services take time to provision
 6. **Clean up duplicate resources** created during retries
+7. **FastAPI must be configured to serve frontend static files** - don't forget favicon/logo routes
+8. **Use unique tags and --no-cache for environment variable updates** - Docker caching can preserve old values
+9. **Verify JavaScript bundles contain updated environment variables** after deployment
 
 ## Cost Estimation
 

@@ -254,6 +254,17 @@ async def generate_pdf(data: PDFGenerationRequest):
 # Mount static files for the React frontend
 app.mount("/assets", StaticFiles(directory="ui/dist/assets"), name="assets")
 
+# Serve favicon and logo files
+@app.get("/favicon.ico")
+async def get_favicon():
+    """Serve the favicon."""
+    return FileResponse("ui/dist/favicon.ico")
+
+@app.get("/sfalogo.png")
+async def get_logo():
+    """Serve the company logo."""
+    return FileResponse("ui/dist/sfalogo.png")
+
 # Catch-all route for React Router (client-side routing)
 # This must be the last route defined
 @app.get("/{full_path:path}")
