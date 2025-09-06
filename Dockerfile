@@ -1,6 +1,17 @@
 # Stage 1: Build Frontend
 FROM node:20-slim AS frontend-builder
 WORKDIR /app/ui
+
+# Accept build arguments for Vite environment variables
+ARG VITE_API_URL
+ARG VITE_WS_URL
+ARG VITE_GOOGLE_MAPS_API_KEY
+
+# Set as environment variables for Vite build process
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_WS_URL=$VITE_WS_URL
+ENV VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY
+
 COPY ui/package*.json ./
 RUN npm install
 COPY ui/ ./
