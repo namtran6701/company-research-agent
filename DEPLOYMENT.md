@@ -132,7 +132,7 @@ az monitor log-analytics workspace delete --resource-group sf-company-research -
 docker build --platform linux/amd64 \
   --build-arg VITE_API_URL=https://placeholder.com \
   --build-arg VITE_WS_URL=wss://placeholder.com \
-  --build-arg VITE_GOOGLE_MAPS_API_KEY=AIzaSyDubyV1hsyGuGfxvcLgUvNBA3Jcx1InZ_0 \
+  --build-arg VITE_GOOGLE_MAPS_API_KEY=<map_key> \
   -t sfcompanyresearchacr.azurecr.io/company-research:temp-amd64 .
 
 # Push to registry
