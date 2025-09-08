@@ -1,0 +1,180 @@
+/* Split View Component Styles */
+.split-view-container {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  contain: layout style paint;
+}
+
+.split-view-report-panel {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Custom scrollbar for webkit browsers */
+.split-view-report-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.split-view-report-panel::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.split-view-report-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.split-view-report-panel::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.split-view-chat-panel {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 320px;
+  max-width: 30vw;
+}
+
+.split-view-resize-handle {
+  cursor: col-resize;
+  transition: all 300ms ease;
+  user-select: none;
+  position: relative;
+  width: 4px;
+  min-width: 4px;
+  background-color: #e5e7eb;
+}
+
+.split-view-resize-handle:hover,
+.split-view-resize-handle:focus {
+  background-color: #3b82f6 !important;
+  outline: none;
+}
+
+.split-view-resize-handle:active,
+.split-view-resize-handle[aria-pressed="true"] {
+  background-color: #2563eb !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .split-view-container {
+    height: 100vh !important;
+    max-height: 100vh;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+  }
+  
+  .split-view-header-buttons .button-text {
+    display: none;
+  }
+  
+  .split-view-header-buttons button {
+    padding: 0.5rem;
+    min-width: 44px; /* Accessibility minimum touch target */
+    min-height: 44px;
+  }
+  
+  /* Focus indicators for mobile */
+  .split-view-header-buttons button:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .split-view-header-buttons .button-text {
+    display: none;
+  }
+}
+
+/* Smooth animations for panel transitions */
+.chat-message {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chat input auto-resize */
+.chat-input-textarea {
+  resize: none;
+  min-height: 40px;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+/* Loading dots animation */
+.loading-dots {
+  animation: loadingPulse 1.4s infinite ease-in-out both;
+}
+
+.loading-dots:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loadingPulse {
+  0%, 80%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom scrollbar for chat messages */
+.chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .split-view-container {
+    border: 2px solid #000;
+  }
+  
+  .split-view-resize-handle {
+    background-color: #000 !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .split-view-container,
+  .split-view-report-panel,
+  .split-view-chat-panel {
+    transition: none;
+  }
+  
+  .chat-message {
+    animation: none;
+  }
+}

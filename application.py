@@ -173,7 +173,13 @@ async def process_research(job_id: str, data: ResearchRequest):
 @app.get("/")
 async def serve_frontend():
     """Serve the React frontend."""
-    return FileResponse("ui/dist/index.html")
+    if os.path.exists("ui/dist/index.html"):
+        return FileResponse("ui/dist/index.html")
+    else:
+        return JSONResponse(
+            content={"message": "Frontend not built yet. Please run 'cd ui && npm run build' or use the frontend dev server at http://localhost:5173"},
+            status_code=200
+        )
 
 @app.get("/research/pdf/{filename}")
 async def get_pdf(filename: str):
@@ -251,26 +257,41 @@ async def generate_pdf(data: PDFGenerationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Mount static files for the React frontend
-app.mount("/assets", StaticFiles(directory="ui/dist/assets"), name="assets")
+# Mount static files for the React frontend (only if dist directory exists)
+if os.path.exists("ui/dist/assets"):
+    app.mount("/assets", StaticFiles(directory="ui/dist/assets"), name="assets")
+else:
+    logger.warning("Frontend not built yet. Run 'cd ui && npm run build' to enable static file serving.")
 
 # Serve favicon and logo files
 @app.get("/favicon.ico")
 async def get_favicon():
     """Serve the favicon."""
-    return FileResponse("ui/dist/favicon.ico")
+    if os.path.exists("ui/dist/favicon.ico"):
+        return FileResponse("ui/dist/favicon.ico")
+    else:
+        raise HTTPException(status_code=404, detail="Favicon not found. Please build the frontend.")
 
 @app.get("/sfalogo.png")
 async def get_logo():
     """Serve the company logo."""
-    return FileResponse("ui/dist/sfalogo.png")
+    if os.path.exists("ui/dist/sfalogo.png"):
+        return FileResponse("ui/dist/sfalogo.png")
+    else:
+        raise HTTPException(status_code=404, detail="Logo not found. Please build the frontend.")
 
 # Catch-all route for React Router (client-side routing)
 # This must be the last route defined
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
     """Serve React app for any unmatched routes (client-side routing)."""
-    return FileResponse("ui/dist/index.html")
+    if os.path.exists("ui/dist/index.html"):
+        return FileResponse("ui/dist/index.html")
+    else:
+        return JSONResponse(
+            content={"message": "Frontend not built yet. Please run 'cd ui && npm run build' or use the frontend dev server at http://localhost:5173"},
+            status_code=200
+        )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
