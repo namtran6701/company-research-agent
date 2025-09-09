@@ -17,6 +17,7 @@ interface ChatMessage {
 
 interface SplitViewProps {
   output: ResearchOutput;
+  jobId: string | null;
   isResetting: boolean;
   glassStyle: GlassStyle;
   fadeInAnimation: AnimationStyle;
@@ -29,6 +30,7 @@ interface SplitViewProps {
 
 const SplitView: React.FC<SplitViewProps> = ({
   output,
+  jobId,
   isResetting,
   glassStyle,
   fadeInAnimation,
@@ -115,7 +117,7 @@ const SplitView: React.FC<SplitViewProps> = ({
           )
         );
         scrollToBottom();
-      });
+      }, { jobId: jobId || undefined });
     } catch (err) {
       const fallback = 'Sorry, I ran into an issue answering that. Please try again.';
       setChatMessages((prev) =>
@@ -245,7 +247,7 @@ const SplitView: React.FC<SplitViewProps> = ({
           : '1fr'
       }}
       data-chat-open={chatOpen}
-      aria-label="Research report with chat interface"
+      aria-label="Ecommerce report with chat interface"
     >
       {/* Header with Action Buttons */}
       <header 
@@ -342,7 +344,7 @@ const SplitView: React.FC<SplitViewProps> = ({
                   <div className="text-center text-gray-500 mt-8">
                     <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                     <h3 className="font-medium mb-2">Ready to help!</h3>
-                    <p className="text-sm">Ask me any questions about the research report.</p>
+                    <p className="text-sm">Ask me any questions about the ecommerce report.</p>
                   </div>
                 ) : (
                   chatMessages.map((message) => (
@@ -438,7 +440,7 @@ const SplitView: React.FC<SplitViewProps> = ({
                 <div className="text-center text-gray-500 mt-8">
                   <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                   <h3 className="font-medium mb-2">Ready to help!</h3>
-                  <p className="text-sm">Ask me any questions about the research report. I can clarify details, provide additional insights, or help you understand the data better.</p>
+                  <p className="text-sm">Ask me any questions about the ecommerce report. I can clarify details, provide additional insights, or help you understand the data better.</p>
                 </div>
               ) : (
                 chatMessages.map((message) => (
@@ -533,7 +535,7 @@ const SplitView: React.FC<SplitViewProps> = ({
         className="split-view-report-panel overflow-y-auto transition-all duration-300 min-h-0"
         style={{ gridColumn: chatOpen && !isMobile ? '3' : '1' }}
         role="main"
-        aria-label="Research report content"
+        aria-label="Ecommerce report content"
       >
         <div className="p-6 prose prose-lg max-w-none">
           {reportBlocks.map((blk) => (
@@ -544,7 +546,7 @@ const SplitView: React.FC<SplitViewProps> = ({
                 components={{
                   h1: ({ children, ...props }) => {
                     const text = String(children);
-                    const isFirstH1 = text.includes("Research Report");
+                    const isFirstH1 = text.includes("Ecommerce Report");
                     return (
                       <h1 
                         className={`font-bold text-gray-900 break-words whitespace-pre-wrap ${

@@ -94,6 +94,8 @@ class PDFGenerationRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     question: str
+    # Optional job context for per-run Q&A isolation
+    job_id: str | None = None
 
 # --- Q&A utilities ---
 def _segment_report(text: str) -> list[dict]:
@@ -251,12 +253,24 @@ async def qa_stream(data: ChatRequest):
     if not question:
         raise HTTPException(status_code=400, detail="Question is required")
 
-    # Ensure a report is available for context
-    if not LATEST_REPORT or not LATEST_REPORT.get("report"):
-        raise HTTPException(status_code=400, detail="No report loaded yet. Run research first.")
+    # Resolve report context, preferring the provided job_id
+    company = "the company"
+    report_text = ""
 
-    company = LATEST_REPORT.get("company", "the company")
-    report_text = LATEST_REPORT.get("report", "")
+    # Prefer per-job report if job_id is provided (in-memory only)
+    if data.job_id:
+        st = job_status.get(data.job_id)
+        if st and st.get("report"):
+            report_text = st.get("report", "")
+            company = st.get("company") or company
+
+    # Final fallback to the last completed report (single-user mode)
+    if not report_text:
+        if LATEST_REPORT and LATEST_REPORT.get("report"):
+            report_text = LATEST_REPORT.get("report", "")
+            company = LATEST_REPORT.get("company", company)
+        else:
+            raise HTTPException(status_code=400, detail="No report found for Q&A. Provide a valid job_id or run research first.")
 
     # Prepare context segments with stable IDs (b1..bN)
     segments = _segment_report(report_text)
@@ -362,6 +376,20 @@ async def get_research(job_id: str):
         raise HTTPException(status_code=404, detail="Research job not found")
     return job
 
+@app.get("/research/status/{job_id}")
+async def get_research_status(job_id: str):
+    """Lightweight in-memory status for UI polling fallback (no DB required)."""
+    st = job_status.get(job_id)
+    if not st:
+        raise HTTPException(status_code=404, detail="Research status not found")
+    return {
+        "status": st.get("status", "pending"),
+        "result": {"report": st.get("report")},
+        "error": st.get("error"),
+        "company": st.get("company"),
+        "last_update": st.get("last_update"),
+    }
+
 @app.get("/research/{job_id}/report")
 async def get_research_report(job_id: str):
     if not mongodb:
@@ -373,7 +401,7 @@ async def get_research_report(job_id: str):
     
     report = mongodb.get_report(job_id)
     if not report:
-        raise HTTPException(status_code=404, detail="Research report not found")
+        raise HTTPException(status_code=404, detail="Ecommerce report not found")
     return report
 
 @app.post("/generate-pdf")

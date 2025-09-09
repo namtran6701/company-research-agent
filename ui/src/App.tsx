@@ -113,6 +113,8 @@ function App() {
 
   const [isResetting, setIsResetting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  // Track current research job id for per-run Q&A
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
   // Add new state for color cycling
   const [loaderColor, setLoaderColor] = useState("#468BFF");
@@ -170,6 +172,7 @@ function App() {
       setIsEnrichmentExpanded(true);
       setIsResetting(false);
       setHasScrolledToStatus(false); // Reset scroll flag when resetting research
+      setCurrentJobId(null);
     }, 300); // Match this with CSS transition duration
   };
 
@@ -719,6 +722,7 @@ function App() {
 
       if (data.job_id) {
         console.log("Connecting WebSocket with job_id:", data.job_id);
+        setCurrentJobId(data.job_id);
         connectWebSocket(data.job_id);
       } else {
         throw new Error("No job ID received");
@@ -804,7 +808,7 @@ function App() {
   const renderProgressComponents = () => {
     const components = [];
 
-    // Research Report with Split View (always at the top when available)
+    // Ecommerce Report with Split View (always at the top when available)
     if (output && output.details) {
       components.push(
         <SplitView
@@ -815,6 +819,7 @@ function App() {
               report: output.details.report || "",
             },
           }}
+          jobId={currentJobId}
           isResetting={isResetting}
           glassStyle={glassStyle}
           fadeInAnimation={fadeInAnimation}
@@ -1122,6 +1127,7 @@ function App() {
               </div>
               <SplitView
                 output={output}
+                jobId={currentJobId}
                 isResetting={isResetting}
                 glassStyle={glassStyle}
                 fadeInAnimation={fadeInAnimation}

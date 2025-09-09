@@ -3,7 +3,7 @@ import { API_URL } from './constants';
 export async function streamAnswer(
   question: string,
   onToken: (chunk: string) => void,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal; jobId?: string }
 ): Promise<void> {
   const controller = new AbortController();
   const signal = options?.signal ?? controller.signal;
@@ -11,7 +11,7 @@ export async function streamAnswer(
   const res = await fetch(`${API_URL}/qa/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, job_id: options?.jobId }),
     signal,
   });
 
