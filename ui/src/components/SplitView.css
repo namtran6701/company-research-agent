@@ -77,7 +77,7 @@
   
   /* Focus indicators for mobile */
   .split-view-header-buttons button:focus {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
 }

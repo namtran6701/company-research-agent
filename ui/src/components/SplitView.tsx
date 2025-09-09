@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageCircle, X, ArrowLeft, Send, Copy, Download } from 'lucide-react';
+import { MessageCircle, X, Send, Copy, Download } from 'lucide-react';
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -215,7 +215,7 @@ const SplitView: React.FC<SplitViewProps> = ({
       parts.push(
         <sup
           key={`${blockId}-${match.index}`}
-          className="ml-0.5 text-[10px] text-blue-600 cursor-pointer align-super"
+          className="ml-0.5 text-[10px] text-primary cursor-pointer align-super"
           role="button"
           tabIndex={0}
           onClick={() => scrollToBlock(blockId)}
@@ -255,33 +255,22 @@ const SplitView: React.FC<SplitViewProps> = ({
         style={{ gridColumn: '1 / -1' }}
         role="banner"
       >
-        <div className="flex items-center gap-4">
-          {chatOpen && (
-            <button
-              onClick={closeChat}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300"
-              aria-label="Close chat and return to full report view"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Back to Report</span>
-            </button>
-          )}
-        </div>
         
-        <nav className="split-view-header-buttons flex items-center gap-2" role="toolbar" aria-label="Report actions">
+        <nav className="split-view-header-buttons ml-auto flex items-center gap-2" role="toolbar" aria-label="Report actions">
           <button
             onClick={openChat}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#468BFF] text-white hover:bg-[#8FBCFA] transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center gap-2 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label="Open chat panel to ask questions about the report"
             aria-pressed={chatOpen}
+            title="Ask follow-up questions"
           >
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            <span className="button-text">Ask Follow-Up Questions</span>
+            <span className="button-text text-sm leading-none">Ask Follow-Up Questions</span>
           </button>
           
           <button
             onClick={onCopyToClipboard}
-            className="inline-flex items-center justify-center p-2 rounded-lg bg-[#468BFF] text-white hover:bg-[#8FBCFA] transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center justify-center p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label="Copy report to clipboard"
             title="Copy to clipboard"
           >
@@ -295,7 +284,7 @@ const SplitView: React.FC<SplitViewProps> = ({
           <button
             onClick={onGeneratePdf}
             disabled={isGeneratingPdf}
-            className="inline-flex items-center justify-center p-2 rounded-lg bg-[#FFB800] text-white hover:bg-[#FFA800] transition-all duration-300 disabled:opacity-50 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+            className="inline-flex items-center justify-center p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label={isGeneratingPdf ? "Generating PDF..." : "Download report as PDF"}
             title="Download PDF"
           >
@@ -351,8 +340,8 @@ const SplitView: React.FC<SplitViewProps> = ({
                     <div key={message.id} className={`chat-message flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] rounded-lg px-4 py-2 ${
                         message.sender === 'user' 
-                          ? 'bg-[#468BFF] text-white' 
-                          : 'bg-gray-100 text-gray-900'
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-secondary text-secondary-foreground'
                       }`}>
                         {message.sender === 'assistant' ? (
                           renderAssistantContent(message.content)
@@ -360,7 +349,7 @@ const SplitView: React.FC<SplitViewProps> = ({
                           <p className="text-sm">{message.content}</p>
                         )}
                         <p className={`text-xs mt-1 ${
-                          message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                          message.sender === 'user' ? 'text-primary-foreground/80' : 'text-muted-foreground'
                         }`}>
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -393,14 +382,14 @@ const SplitView: React.FC<SplitViewProps> = ({
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Ask a question about the report..."
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                       rows={1}
                       style={{ fontSize: '16px' }}
                     />
                     <button
                       type="submit"
                       disabled={!inputValue.trim() || isLoading}
-                      className="p-2 bg-[#468BFF] text-white rounded-lg hover:bg-[#8FBCFA] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                      className="p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                       aria-label="Send message"
                     >
                       <Send className="h-4 w-4" />
@@ -447,8 +436,8 @@ const SplitView: React.FC<SplitViewProps> = ({
                   <div key={message.id} className={`chat-message flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[90%] rounded-lg px-4 py-2 ${
                       message.sender === 'user' 
-                        ? 'bg-[#468BFF] text-white' 
-                        : 'bg-gray-100 text-gray-900'
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-secondary text-secondary-foreground'
                     }`}>
                       {message.sender === 'assistant' ? (
                         renderAssistantContent(message.content)
@@ -456,7 +445,7 @@ const SplitView: React.FC<SplitViewProps> = ({
                         <p className="text-sm">{message.content}</p>
                       )}
                       <p className={`text-xs mt-1 ${
-                        message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                        message.sender === 'user' ? 'text-primary-foreground/80' : 'text-muted-foreground'
                       }`}>
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
@@ -489,13 +478,13 @@ const SplitView: React.FC<SplitViewProps> = ({
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask a question about the report..."
-                    className="chat-input-textarea flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="chat-input-textarea flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     rows={1}
                   />
                   <button
                     type="submit"
                     disabled={!inputValue.trim() || isLoading}
-                    className="p-2 bg-[#468BFF] text-white rounded-lg hover:bg-[#8FBCFA] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     aria-label="Send message"
                   >
                     <Send className="h-4 w-4" />
@@ -576,7 +565,7 @@ const SplitView: React.FC<SplitViewProps> = ({
                               <a
                                 key={i}
                                 href={part}
-                                className="text-[#468BFF] hover:text-[#8FBCFA] underline transition-colors duration-300"
+                                className="text-primary hover:text-primary/80 underline transition-colors duration-300"
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
@@ -600,7 +589,7 @@ const SplitView: React.FC<SplitViewProps> = ({
                   a: ({ href, ...props }) => (
                     <a
                       href={href}
-                      className="text-[#468BFF] hover:text-[#8FBCFA] underline transition-colors duration-300"
+                      className="text-primary hover:text-primary/80 underline transition-colors duration-300"
                       target="_blank"
                       rel="noopener noreferrer"
                       {...props}
