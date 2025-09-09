@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageCircle, X, ArrowLeft, Send, Copy, Download } from 'lucide-react';
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from 'rehype-raw';
@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { ResearchOutput, GlassStyle, AnimationStyle } from '../types';
 import './SplitView.css';
 import { streamAnswer } from '../utils/qa';
+import { segmentReport, type ReportBlock } from '../utils/reportSegmentation';
 
 interface ChatMessage {
   id: string;
@@ -48,6 +49,7 @@ const SplitView: React.FC<SplitViewProps> = ({
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
   // Check for mobile screen
   useEffect(() => {
@@ -174,6 +176,61 @@ const SplitView: React.FC<SplitViewProps> = ({
 
   if (!output || !output.details) return null;
 
+  // Prepare segmented report blocks with stable IDs
+  const reportBlocks: ReportBlock[] = useMemo(() => {
+    return segmentReport(output.details.report || '');
+  }, [output?.details?.report]);
+
+  const setBlockRef = (id: string) => (el: HTMLElement | null) => {
+    blockRefs.current[id] = el;
+  };
+
+  const scrollToBlock = (id: string) => {
+    const el = blockRefs.current[id] || document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('citation-highlight');
+      window.setTimeout(() => el.classList.remove('citation-highlight'), 1200);
+    }
+  };
+
+  // Render assistant message with inline citation markers [bN] -> clickable superscripts
+  const renderAssistantContent = (text: string) => {
+    if (!text) return <p className="text-sm"/>;
+
+    const parts: Array<JSX.Element | string> = [];
+    const idToIndex = new Map<string, number>();
+    let nextIndex = 1;
+    const regex = /\[(b\d+)\]/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(text)) !== null) {
+      const before = text.slice(lastIndex, match.index);
+      if (before) parts.push(before);
+      const blockId = match[1];
+      if (!idToIndex.has(blockId)) idToIndex.set(blockId, nextIndex++);
+      const n = idToIndex.get(blockId)!;
+      parts.push(
+        <sup
+          key={`${blockId}-${match.index}`}
+          className="ml-0.5 text-[10px] text-blue-600 cursor-pointer align-super"
+          role="button"
+          tabIndex={0}
+          onClick={() => scrollToBlock(blockId)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToBlock(blockId); } }}
+          aria-label={`Cites segment ${blockId}`}
+          title={`Cites ${blockId}`}
+        >
+          {n}
+        </sup>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    const tail = text.slice(lastIndex);
+    if (tail) parts.push(tail);
+    return <p className="text-sm">{parts}</p>;
+  };
+
   return (
     <article 
       ref={containerRef}
@@ -295,7 +352,11 @@ const SplitView: React.FC<SplitViewProps> = ({
                           ? 'bg-[#468BFF] text-white' 
                           : 'bg-gray-100 text-gray-900'
                       }`}>
-                        <p className="text-sm">{message.content}</p>
+                        {message.sender === 'assistant' ? (
+                          renderAssistantContent(message.content)
+                        ) : (
+                          <p className="text-sm">{message.content}</p>
+                        )}
                         <p className={`text-xs mt-1 ${
                           message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
                         }`}>
@@ -387,7 +448,11 @@ const SplitView: React.FC<SplitViewProps> = ({
                         ? 'bg-[#468BFF] text-white' 
                         : 'bg-gray-100 text-gray-900'
                     }`}>
-                      <p className="text-sm">{message.content}</p>
+                      {message.sender === 'assistant' ? (
+                        renderAssistantContent(message.content)
+                      ) : (
+                        <p className="text-sm">{message.content}</p>
+                      )}
                       <p className={`text-xs mt-1 ${
                         message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
                       }`}>
@@ -471,76 +536,80 @@ const SplitView: React.FC<SplitViewProps> = ({
         aria-label="Research report content"
       >
         <div className="p-6 prose prose-lg max-w-none">
-          <ReactMarkdown
-            rehypePlugins={[rehypeRaw]}
-            remarkPlugins={[remarkGfm]}
-            components={{
-              h1: ({ children, ...props }) => {
-                const text = String(children);
-                const isFirstH1 = text.includes("Research Report");
-                return (
-                  <h1 
-                    className={`font-bold text-gray-900 break-words whitespace-pre-wrap ${
-                      isFirstH1 ? 'text-4xl mb-8 mt-4' : 'text-3xl mb-6'
-                    }`} 
-                    {...props}
-                  >
-                    {children}
-                  </h1>
-                );
-              },
-              h2: (props) => (
-                <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4" {...props} />
-              ),
-              h3: (props) => (
-                <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3" {...props} />
-              ),
-              p: ({ children, ...props }) => {
-                const text = String(children);
-                const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
-                
-                if (urlRegex.test(text)) {
-                  const parts = text.split(urlRegex);
-                  return (
-                    <p className="text-gray-800 my-2" {...props}>
-                      {parts.map((part, i) => 
-                        urlRegex.test(part) ? (
-                          <a 
-                            key={i}
-                            href={part}
-                            className="text-[#468BFF] hover:text-[#8FBCFA] underline transition-colors duration-300"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {part}
-                          </a>
-                        ) : part
-                      )}
-                    </p>
-                  );
-                }
-                
-                return <p className="text-gray-800 my-2" {...props}>{children}</p>;
-              },
-              ul: (props) => (
-                <ul className="text-gray-800 space-y-1 list-disc pl-6" {...props} />
-              ),
-              li: (props) => (
-                <li className="text-gray-800" {...props} />
-              ),
-              a: ({ href, ...props }) => (
-                <a 
-                  href={href}
-                  className="text-[#468BFF] hover:text-[#8FBCFA] underline transition-colors duration-300"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  {...props} 
-                />
-              ),
-            }}
-          >
-            {output.details.report || "No report available"}
-          </ReactMarkdown>
+          {reportBlocks.map((blk) => (
+            <div key={blk.id} id={blk.id} data-block-id={blk.id} ref={setBlockRef(blk.id)}>
+              <ReactMarkdown
+                rehypePlugins={[rehypeRaw]}
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ children, ...props }) => {
+                    const text = String(children);
+                    const isFirstH1 = text.includes("Research Report");
+                    return (
+                      <h1 
+                        className={`font-bold text-gray-900 break-words whitespace-pre-wrap ${
+                          isFirstH1 ? 'text-4xl mb-8 mt-4' : 'text-3xl mb-6'
+                        }`} 
+                        {...props}
+                      >
+                        {children}
+                      </h1>
+                    );
+                  },
+                  h2: (props) => (
+                    <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4" {...props} />
+                  ),
+                  h3: (props) => (
+                    <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3" {...props} />
+                  ),
+                  p: ({ children, ...props }) => {
+                    const text = String(children);
+                    const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
+                    if (urlRegex.test(text)) {
+                      const parts = text.split(urlRegex);
+                      return (
+                        <p className="text-gray-800 my-2" {...props}>
+                          {parts.map((part, i) =>
+                            urlRegex.test(part) ? (
+                              <a
+                                key={i}
+                                href={part}
+                                className="text-[#468BFF] hover:text-[#8FBCFA] underline transition-colors duration-300"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {part}
+                              </a>
+                            ) : (
+                              part
+                            )
+                          )}
+                        </p>
+                      );
+                    }
+                    return <p className="text-gray-800 my-2" {...props}>{children}</p>;
+                  },
+                  ul: (props) => (
+                    <ul className="text-gray-800 space-y-1 list-disc pl-6" {...props} />
+                  ),
+                  li: (props) => (
+                    <li className="text-gray-800" {...props} />
+                  ),
+                  a: ({ href, ...props }) => (
+                    <a
+                      href={href}
+                      className="text-[#468BFF] hover:text-[#8FBCFA] underline transition-colors duration-300"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...props}
+                    />
+                  ),
+                }}
+              >
+                {blk.text}
+              </ReactMarkdown>
+            </div>
+          ))}
         </div>
       </main>
     </article>

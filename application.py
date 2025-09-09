@@ -95,6 +95,44 @@ class PDFGenerationRequest(BaseModel):
 class ChatRequest(BaseModel):
     question: str
 
+# --- Q&A utilities ---
+def _segment_report(text: str) -> list[dict]:
+    """Split markdown report into logical blocks and assign IDs b1..bN.
+    Simple rules: new block on blank line or when a heading starts.
+    """
+    if not text:
+        return []
+    lines = text.splitlines()
+    blocks: list[str] = []
+    current: list[str] = []
+
+    def flush():
+        if current:
+            # Trim leading/trailing blank lines inside a block
+            while current and not current[0].strip():
+                current.pop(0)
+            while current and not current[-1].strip():
+                current.pop()
+            if current:
+                blocks.append("\n".join(current))
+
+    for ln in lines:
+        if not ln.strip():
+            # blank line -> break block
+            flush()
+            current = []
+            continue
+        if ln.lstrip().startswith("#") and current:
+            # heading starts a new block
+            flush()
+            current = [ln]
+        else:
+            current.append(ln)
+    flush()
+
+    return [{"id": f"b{i+1}", "text": blk} for i, blk in enumerate(blocks)]
+
+
 @app.options("/research")
 async def preflight():
     response = JSONResponse(content=None, status_code=200)
@@ -220,6 +258,14 @@ async def qa_stream(data: ChatRequest):
     company = LATEST_REPORT.get("company", "the company")
     report_text = LATEST_REPORT.get("report", "")
 
+    # Prepare context segments with stable IDs (b1..bN)
+    segments = _segment_report(report_text)
+    # Use all segments to keep it simple (no filtering)
+    selected_segments = segments
+    # Render as a compact text list
+    context_lines = [f"[{s['id']}] {s['text']}" for s in selected_segments]
+    context_blob = "\n\n".join(context_lines)
+
     async def token_generator():
         try:
             response = await azure_openai_client.chat.completions.create(
@@ -228,14 +274,16 @@ async def qa_stream(data: ChatRequest):
                     {
                         "role": "system",
                         "content": (
-                            "You are a helpful assistant. Answer using ONLY the report context provided. "
-                            "If the answer is not clearly supported by the report, say you don't know. "
-                            "Be concise and avoid speculation."
+                            "Answer using ONLY the report segments provided below. "
+                            "When you make a claim supported by a segment, add an inline citation marker with the segment ID, e.g., [b12]. "
+                            "Include citations only where relevant. If the report does not clearly support the answer, say you don't know. ",
+                            "When adding citations, place citations at the end of each relevant sentence, not grouped at the end of the answer."
+                            "Be concise and focused."
                         ),
                     },
                     {
                         "role": "system",
-                        "content": f"Report context for {company}:\n\n{report_text}",
+                        "content": f"Report segments for {company}:\n\n{context_blob}",
                     },
                     {"role": "user", "content": question},
                 ],
