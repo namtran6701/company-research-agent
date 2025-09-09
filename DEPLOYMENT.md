@@ -199,6 +199,43 @@ az containerapp update \
   --image sfcompanyresearchacr.azurecr.io/company-research:latest
 ```
 
+## Updating Secrets After Deployment
+
+**Important**: The `--replace-secrets` parameter does not exist in Azure Container Apps CLI. Use the dedicated secret management command instead.
+
+### Update Individual Secrets
+
+```bash
+az containerapp secret set \
+  --name sf-company-research-app \
+  --resource-group sf-company-research \
+  --secrets tavily-key="your-new-tavily-api-key"
+```
+
+### Update Multiple Secrets at Once
+
+```bash
+az containerapp secret set \
+  --name sf-company-research-app \
+  --resource-group sf-company-research \
+  --secrets \
+    tavily-key="your-new-tavily-api-key" \
+    azure-openai-key="your-azure-openai-key" \
+    azure-openai-endpoint="your-azure-openai-endpoint"
+```
+
+### Verify the Update
+
+Check that the secret was updated successfully:
+
+```bash
+az containerapp secret list \
+  --name sf-company-research-app \
+  --resource-group sf-company-research
+```
+
+**Note**: The Container App will automatically restart with the new secret values. No rebuild or redeployment of the Docker image is required since these are runtime environment variables, not build-time variables.
+
 ## Major Challenges and Solutions
 
 ### 1. Docker Platform Architecture Issue
@@ -344,6 +381,11 @@ curl -s https://$APP_URL$JS_FILE | grep -o "your-new-env-var-pattern"
 3. **Frontend not loading**:
    - Verify build arguments were passed correctly
    - Check browser network tab for API endpoint URLs
+
+4. **Secret update failures** (`unrecognized arguments: --replace-secrets`):
+   - Use `az containerapp secret set` instead of `az containerapp update --replace-secrets`
+   - The `--replace-secrets` parameter does not exist in Azure Container Apps CLI
+   - See "Updating Secrets After Deployment" section for correct syntax
 
 ## Environment Variables Reference
 
