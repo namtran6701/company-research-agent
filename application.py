@@ -18,6 +18,7 @@ from backend.graph import Graph
 from backend.services.mongodb import MongoDBService
 from backend.services.pdf_service import PDFService
 from backend.services.websocket_manager import WebSocketManager
+from openai import AsyncAzureOpenAI
 
 # Load environment variables from .env file at startup
 env_path = Path(__file__).parent / '.env'
@@ -53,6 +54,9 @@ job_status = defaultdict(lambda: {
     "last_update": datetime.now().isoformat()
 })
 
+# Single-user simple context holder for the latest completed report
+LATEST_REPORT: dict | None = None
+
 mongodb = None
 if mongo_uri := os.getenv("MONGODB_URI"):
     try:
@@ -60,6 +64,23 @@ if mongo_uri := os.getenv("MONGODB_URI"):
         logger.info("MongoDB integration enabled")
     except Exception as e:
         logger.warning(f"Failed to initialize MongoDB: {e}. Continuing without persistence.")
+
+# Initialize Azure OpenAI client for Q&A/chat (streaming)
+azure_openai_client: AsyncAzureOpenAI | None = None
+try:
+    azure_key = os.getenv("AZURE_OPENAI_KEY")
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    if azure_key and azure_endpoint:
+        azure_openai_client = AsyncAzureOpenAI(
+            api_key=azure_key,
+            azure_endpoint=azure_endpoint,
+            api_version="2025-04-01-preview",
+        )
+        logger.info("Azure OpenAI client initialized for Q&A streaming")
+    else:
+        logger.warning("Azure OpenAI credentials not found; Q&A streaming will be unavailable")
+except Exception as e:
+    logger.warning(f"Failed to initialize Azure OpenAI client: {e}")
 
 class ResearchRequest(BaseModel):
     company: str
@@ -70,6 +91,9 @@ class ResearchRequest(BaseModel):
 class PDFGenerationRequest(BaseModel):
     report_content: str
     company_name: str | None = None
+
+class ChatRequest(BaseModel):
+    question: str
 
 @app.options("/research")
 async def preflight():
@@ -132,6 +156,12 @@ async def process_research(job_id: str, data: ResearchRequest):
                 "company": data.company,
                 "last_update": datetime.now().isoformat()
             })
+            # Update single-user latest report context
+            global LATEST_REPORT
+            LATEST_REPORT = {
+                "company": data.company,
+                "report": report_content,
+            }
             if mongodb:
                 mongodb.update_job(job_id=job_id, status="completed")
                 mongodb.store_report(job_id=job_id, report_data={"report": report_content})
@@ -170,10 +200,76 @@ async def process_research(job_id: str, data: ResearchRequest):
         )
         if mongodb:
             mongodb.update_job(job_id=job_id, status="failed", error=str(e))
+
+@app.post("/qa/stream")
+async def qa_stream(data: ChatRequest):
+    """Simple streaming chat endpoint. Single-user, stateless, no history.
+    Streams plain text tokens using Azure OpenAI gpt-4.1.
+    """
+    if azure_openai_client is None:
+        raise HTTPException(status_code=503, detail="Q&A not configured: missing Azure OpenAI credentials")
+
+    question = (data.question or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+
+    # Ensure a report is available for context
+    if not LATEST_REPORT or not LATEST_REPORT.get("report"):
+        raise HTTPException(status_code=400, detail="No report loaded yet. Run research first.")
+
+    company = LATEST_REPORT.get("company", "the company")
+    report_text = LATEST_REPORT.get("report", "")
+
+    async def token_generator():
+        try:
+            response = await azure_openai_client.chat.completions.create(
+                model="gpt-4.1",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a helpful assistant. Answer using ONLY the report context provided. "
+                            "If the answer is not clearly supported by the report, say you don't know. "
+                            "Be concise and avoid speculation."
+                        ),
+                    },
+                    {
+                        "role": "system",
+                        "content": f"Report context for {company}:\n\n{report_text}",
+                    },
+                    {"role": "user", "content": question},
+                ],
+                temperature=0.2,
+                max_tokens=800,
+                stream=True,
+            )
+
+            async for chunk in response:
+                try:
+                    if not chunk.choices:
+                        continue
+                    delta = chunk.choices[0].delta
+                    if delta and getattr(delta, "content", None):
+                        text = delta.content
+                        if text:
+                            yield text.encode("utf-8")
+                except Exception:
+                    continue
+        except Exception as e:
+            logger.error(f"Q&A streaming failed: {e}")
+            yield f"\n[Error] {str(e)}".encode("utf-8")
+
+    return StreamingResponse(token_generator(), media_type="text/plain; charset=utf-8")
 @app.get("/")
 async def serve_frontend():
     """Serve the React frontend."""
-    return FileResponse("ui/dist/index.html")
+    if os.path.exists("ui/dist/index.html"):
+        return FileResponse("ui/dist/index.html")
+    else:
+        return JSONResponse(
+            content={"message": "Frontend not built yet. Please run 'cd ui && npm run build' or use the frontend dev server at http://localhost:5173"},
+            status_code=200
+        )
 
 @app.get("/research/pdf/{filename}")
 async def get_pdf(filename: str):
@@ -251,26 +347,41 @@ async def generate_pdf(data: PDFGenerationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Mount static files for the React frontend
-app.mount("/assets", StaticFiles(directory="ui/dist/assets"), name="assets")
+# Mount static files for the React frontend (only if dist directory exists)
+if os.path.exists("ui/dist/assets"):
+    app.mount("/assets", StaticFiles(directory="ui/dist/assets"), name="assets")
+else:
+    logger.warning("Frontend not built yet. Run 'cd ui && npm run build' to enable static file serving.")
 
 # Serve favicon and logo files
 @app.get("/favicon.ico")
 async def get_favicon():
     """Serve the favicon."""
-    return FileResponse("ui/dist/favicon.ico")
+    if os.path.exists("ui/dist/favicon.ico"):
+        return FileResponse("ui/dist/favicon.ico")
+    else:
+        raise HTTPException(status_code=404, detail="Favicon not found. Please build the frontend.")
 
 @app.get("/sfalogo.png")
 async def get_logo():
     """Serve the company logo."""
-    return FileResponse("ui/dist/sfalogo.png")
+    if os.path.exists("ui/dist/sfalogo.png"):
+        return FileResponse("ui/dist/sfalogo.png")
+    else:
+        raise HTTPException(status_code=404, detail="Logo not found. Please build the frontend.")
 
 # Catch-all route for React Router (client-side routing)
 # This must be the last route defined
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
     """Serve React app for any unmatched routes (client-side routing)."""
-    return FileResponse("ui/dist/index.html")
+    if os.path.exists("ui/dist/index.html"):
+        return FileResponse("ui/dist/index.html")
+    else:
+        return JSONResponse(
+            content={"message": "Frontend not built yet. Please run 'cd ui && npm run build' or use the frontend dev server at http://localhost:5173"},
+            status_code=200
+        )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
