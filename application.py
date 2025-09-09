@@ -276,7 +276,7 @@ async def qa_stream(data: ChatRequest):
                         "content": (
                             "Answer using ONLY the report segments provided below. "
                             "When you make a claim supported by a segment, add an inline citation marker with the segment ID, e.g., [b12]. "
-                            "Include citations only where relevant. If the report does not clearly support the answer, say you don't know. ",
+                            "Include citations only where relevant. If the report does not clearly support the answer, say you don't know. "
                             "When adding citations, place citations at the end of each relevant sentence, not grouped at the end of the answer."
                             "Be concise and focused."
                         ),
