@@ -51,7 +51,7 @@ class MongoDBService:
         return self.jobs.find_one({"job_id": job_id})
 
     def store_report(self, job_id: str, report_data: Dict[str, Any]) -> None:
-        """Store the finalized research report."""
+        """Store the finalized ecommerce report."""
         self.reports.insert_one({
             "job_id": job_id,
             "report_content": report_data.get("report", ""),

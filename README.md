@@ -10,7 +10,7 @@
 
 ![web ui](<static/ui-1.png>)
 
-A multi-agent tool that generates comprehensive company research reports. The platform uses a pipeline of AI agents to gather, curate, and synthesize information about any company.
+A multi-agent tool that generates comprehensive company ecommerce reports. The platform uses a pipeline of AI agents to gather, curate, and synthesize information about any company.
 
 ✨Check it out online! https://companyresearcher.tavily.com ✨
 

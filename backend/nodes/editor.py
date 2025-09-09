@@ -129,7 +129,7 @@ class Editor:
                     await websocket_manager.send_status_update(
                         job_id=job_id,
                         status="processing",
-                        message="Compiling initial research report",
+                        message="Compiling initial ecommerce report",
                         result={
                             "step": "Editor",
                             "substep": "compilation"
@@ -191,7 +191,7 @@ class Editor:
                     await websocket_manager.send_status_update(
                         job_id=job_id,
                         status="editor_complete",
-                        message="Research report completed",
+                        message="Ecommerce report completed",
                         result={
                             "step": "Editor",
                             "report": final_report,
@@ -231,7 +231,7 @@ class Editor:
         industry = self.context["industry"]
         hq_location = self.context["hq_location"]
         
-        prompt = f"""You are compiling a comprehensive research report about {company}.
+        prompt = f"""You are compiling a comprehensive ecommerce report about {company}.
 
 Compiled briefings:
 {combined_content}
@@ -245,7 +245,7 @@ Create a comprehensive and focused report on {company}, a {industry} company hea
 Formatting rules:
 Strictly enforce this EXACT document structure:
 
-# {company} Research Report
+# {company} Ecommerce Report
 
 ## Company Overview
 [Company content with ### subsections]
@@ -323,7 +323,7 @@ Strictly enforce this EXACT document structure:
 [References in MLA format - PRESERVE EXACTLY AS PROVIDED]
 
 Critical rules:
-1. The document MUST start with "# {company} Research Report"
+1. The document MUST start with "# {company} Ecommerce Report"
 2. The document MUST ONLY use these exact ## headers in this order:
    - ## Company Overview
    - ## Industry Overview

@@ -83,7 +83,7 @@ const ResearchReport: React.FC<ResearchReportProps> = ({
               ),
               h1: ({node, children, ...props}) => {
                 const text = String(children);
-                const isFirstH1 = text.includes("Research Report");
+                const isFirstH1 = text.includes("Ecommerce Report");
                 const isReferences = text.includes("References");
                 return (
                   <div>
