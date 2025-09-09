@@ -5,6 +5,7 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { ResearchOutput, GlassStyle, AnimationStyle } from '../types';
 import './SplitView.css';
+import { streamAnswer } from '../utils/qa';
 
 interface ChatMessage {
   id: string;
@@ -72,47 +73,55 @@ const SplitView: React.FC<SplitViewProps> = ({
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: inputValue,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setChatMessages(prev => [...prev, userMessage]);
+    const assistantId = (Date.now() + 1).toString();
+    const initialAssistant: ChatMessage = {
+      id: assistantId,
+      content: '',
+      sender: 'assistant',
+      timestamp: new Date(),
+    };
+
+    setChatMessages((prev) => [...prev, userMessage, initialAssistant]);
     setInputValue('');
     setIsLoading(true);
 
-    // Auto-scroll to bottom
-    setTimeout(() => {
-      chatMessagesRef.current?.scrollTo({ 
-        top: chatMessagesRef.current.scrollHeight, 
-        behavior: 'smooth' 
-      });
-    }, 100);
-
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: "Thank you for your question about the research report. This is a simulated response. In the actual implementation, this would be connected to your AI system to provide insights and answer questions about the company research data.",
-        sender: 'assistant',
-        timestamp: new Date()
-      };
-
-      setChatMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-      
-      // Auto-scroll to bottom
+    // Ensure we scroll to bottom as content grows
+    const scrollToBottom = () => {
       setTimeout(() => {
-        chatMessagesRef.current?.scrollTo({ 
-          top: chatMessagesRef.current.scrollHeight, 
-          behavior: 'smooth' 
+        chatMessagesRef.current?.scrollTo({
+          top: chatMessagesRef.current.scrollHeight,
+          behavior: 'smooth',
         });
-      }, 100);
-    }, 1500);
+      }, 50);
+    };
+    scrollToBottom();
+
+    try {
+      await streamAnswer(userMessage.content, (chunk) => {
+        setChatMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: (m.content || '') + chunk } : m
+          )
+        );
+        scrollToBottom();
+      });
+    } catch (err) {
+      const fallback = 'Sorry, I ran into an issue answering that. Please try again.';
+      setChatMessages((prev) =>
+        prev.map((m) => (m.id === assistantId ? { ...m, content: fallback } : m))
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -168,7 +177,7 @@ const SplitView: React.FC<SplitViewProps> = ({
   return (
     <article 
       ref={containerRef}
-      className={`split-view-container ${glassStyle.card} ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'}`}
+      className={`split-view-container ${glassStyle.card} ${fadeInAnimation.fadeIn} ${isResetting ? 'opacity-0 transform -translate-y-4' : 'opacity-100 transform translate-y-0'} min-h-0`}
       style={{ 
         height: chatOpen ? (isMobile ? '100vh' : '80vh') : 'auto', 
         minHeight: chatOpen ? (isMobile ? '100vh' : '600px') : 'auto',
@@ -252,7 +261,7 @@ const SplitView: React.FC<SplitViewProps> = ({
             aria-labelledby="chat-title"
           >
             <div 
-              className="bg-white w-full h-3/4 rounded-t-xl flex flex-col"
+              className="bg-white w-full h-3/4 rounded-t-xl flex flex-col min-h-0"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
@@ -268,7 +277,7 @@ const SplitView: React.FC<SplitViewProps> = ({
               
               <div 
                 ref={chatMessagesRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4"
+                className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
                 role="log"
                 aria-live="polite"
               >
@@ -342,7 +351,7 @@ const SplitView: React.FC<SplitViewProps> = ({
         ) : (
           // Desktop Left Panel
           <aside 
-            className="split-view-chat-panel flex flex-col bg-white border-r border-gray-200 transition-all duration-300"
+            className="split-view-chat-panel flex flex-col bg-white border-r border-gray-200 transition-all duration-300 min-h-0 h-full"
             style={{ gridColumn: '1' }}
             role="complementary"
             aria-labelledby="desktop-chat-title"
@@ -360,7 +369,7 @@ const SplitView: React.FC<SplitViewProps> = ({
 
             <div 
               ref={chatMessagesRef}
-              className="chat-messages flex-1 overflow-y-auto p-4 space-y-4"
+              className="chat-messages flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
               role="log"
               aria-live="polite"
             >
@@ -456,7 +465,7 @@ const SplitView: React.FC<SplitViewProps> = ({
 
       {/* Report Panel - Main Content */}
       <main 
-        className="split-view-report-panel overflow-y-auto transition-all duration-300"
+        className="split-view-report-panel overflow-y-auto transition-all duration-300 min-h-0"
         style={{ gridColumn: chatOpen && !isMobile ? '3' : '1' }}
         role="main"
         aria-label="Research report content"
