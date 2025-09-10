@@ -1,11 +1,3 @@
- [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/pogjester/company-research-agent/blob/main/README.md)
-[![zh](https://img.shields.io/badge/lang-zh-green.svg)](https://github.com/pogjester/company-research-agent/blob/main/README.zh.md)
-[![fr](https://img.shields.io/badge/lang-fr-blue.svg)](https://github.com/pogjester/company-research-agent/blob/main/README.fr.md)
-[![es](https://img.shields.io/badge/lang-es-yellow.svg)](https://github.com/pogjester/company-research-agent/blob/main/README.es.md)
-[![jp](https://img.shields.io/badge/lang-jp-orange.svg)](https://github.com/pogjester/company-research-agent/blob/main/README.jp.md)
-[![kr](https://img.shields.io/badge/lang-ko-purple.svg)](https://github.com/pogjester/company-research-agent/blob/main/README.kr.md)
-
-
 # Agentic Company Researcher 🔍
 
 ![web ui](<static/ui-1.png>)
@@ -22,7 +14,8 @@ https://github.com/user-attachments/assets/0e373146-26a7-4391-b973-224ded3182a9
 - **AI-Powered Content Filtering**: Uses Tavily's relevance scoring for content curation
 - **Real-Time Progress Streaming**: Uses WebSocket connections to stream research progress and results
 - **Dual Model Architecture**:
-  - Azure GPT-4.1 for high-context research synthesis and precise report formatting and editing
+  - Briefing: Azure OpenAI GPT-4.1 for high-context synthesis
+  - Editor: Anthropic Claude Sonnet 4 (preferred); falls back to Azure GPT-4.1
 - **Modern React Frontend**: Responsive UI with real-time updates, progress tracking, and download options
 - **Modular Architecture**: Built using a pipeline of specialized research and processing nodes
 
@@ -35,14 +28,15 @@ The platform follows an agentic framework with specialized nodes that process da
 1. **Research Nodes**:
    - `CompanyAnalyzer`: Researches core business information
    - `IndustryAnalyzer`: Analyzes market position and trends
-   - `FinancialAnalyst`: Gathers financial metrics and performance data
    - `NewsScanner`: Collects recent news and developments
+   - `OnlineEcommerceAuditor`: Performs an e-commerce effectiveness audit
+   - `FinancialAnalyst` (temporarily disabled in workflow wiring)
 
 2. **Processing Nodes**:
    - `Collector`: Aggregates research data from all analyzers
    - `Curator`: Implements content filtering and relevance scoring
-   - `Briefing`: Generates category-specific summaries using Azure GPT-4.1
-   - `Editor`: Compiles and formats the briefings into a final report using Azure GPT-4.1
+   - `Briefing`: Generates category-specific summaries (Azure GPT-4.1)
+   - `Editor`: Compiles and formats the briefings into a final report (Claude Sonnet 4 when available; otherwise Azure GPT-4.1)
 
    ![web ui](<static/agent-flow.png>)
 
@@ -56,17 +50,12 @@ The platform leverages separate models for optimal performance:
    - Used for generating initial category briefings
    - Efficient at maintaining context across multiple documents
 
-2. **Azure GPT-4.1** (`editor.py`):
+2. **Anthropic Claude Sonnet 4 (preferred)** with fallback to **Azure GPT-4.1** (`editor.py`):
    - Specializes in precise formatting and editing tasks
    - Handles markdown structure and consistency
-   - Superior at following exact formatting instructions
-   - Used for:
-     - Final report compilation
-     - Content deduplication
-     - Markdown formatting
-     - Real-time report streaming
+   - Used for final compilation, deduplication, formatting, and streaming
 
-This approach leverages Azure GPT-4.1's strength in handling large context windows and precision in following specific formatting instructions.
+This approach prefers Claude for editing quality while retaining Azure GPT-4.1 as a reliable fallback.
 
 ### Content Curation System
 
@@ -131,8 +120,8 @@ The easiest way to get started is using the setup script, which automatically de
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/pogjester/tavily-company-research.git
-cd tavily-company-research
+git clone https://github.com/pogjester/company-research-agent.git
+cd company-research-agent
 ```
 
 2. Make the setup script executable and run it:
@@ -158,8 +147,9 @@ The setup script will:
 
 You'll need the following API keys ready:
 - Tavily API Key
-- AZURE_OPENAI_API_KEY
+- AZURE_OPENAI_KEY
 - AZURE_OPENAI_ENDPOINT
+- ANTHROPIC_API_KEY (optional)
 - Google Maps API Key
 - MongoDB URI (optional)
 
@@ -169,8 +159,8 @@ If you prefer to set up manually, follow these steps:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/pogjester/tavily-company-research.git
-cd tavily-company-research
+git clone https://github.com/pogjester/company-research-agent.git
+cd company-research-agent
 ```
 
 2. Install backend dependencies:
@@ -208,8 +198,9 @@ Create a `.env` file in the project's root directory and add your backend API ke
 
 ```env
 TAVILY_API_KEY=your_tavily_key
-AZURE_OPENAI_API_KEY=your_azure_openai_key
+AZURE_OPENAI_KEY=your_azure_openai_key
 AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint
+ANTHROPIC_API_KEY=your_anthropic_key  # optional
 
 # Optional: Enable MongoDB persistence
 # MONGODB_URI=your_mongodb_connection_string
@@ -237,8 +228,8 @@ The application can be run using Docker and Docker Compose:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/pogjester/tavily-company-research.git
-cd tavily-company-research
+git clone https://github.com/pogjester/company-research-agent.git
+cd company-research-agent
 ```
 
 2. **Set up Environment Variables**:
@@ -251,8 +242,9 @@ Create a `.env` file in the project's root directory with your backend API keys:
 
 ```env
 TAVILY_API_KEY=your_tavily_key
-AZURE_OPENAI_API_KEY=your_azure_openai_key
+AZURE_OPENAI_KEY=your_azure_openai_key
 AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint
+ANTHROPIC_API_KEY=your_anthropic_key  # optional
 
 # Optional: Enable MongoDB persistence
 # MONGODB_URI=your_mongodb_connection_string
@@ -349,34 +341,9 @@ npm run dev
 
 > **⚡ Performance Note**: If you used `uv` during setup, you'll benefit from significantly faster package installation and dependency resolution. `uv` is a modern Python package manager written in Rust that can be 10-100x faster than pip.
 
-### Deployment Options
+### Deployment
 
-The application can be deployed to various cloud platforms. Here are some common options:
-
-#### AWS Elastic Beanstalk
-
-1. Install the EB CLI:
-   ```bash
-   pip install awsebcli
-   ```
-
-2. Initialize EB application:
-   ```bash
-   eb init -p python-3.11 tavily-research
-   ```
-
-3. Create and deploy:
-   ```bash
-   eb create tavily-research-prod
-   ```
-
-#### Other Deployment Options
-
-- **Docker**: The application includes a Dockerfile for containerized deployment
-- **Heroku**: Deploy directly from GitHub with the Python buildpack
-- **Google Cloud Run**: Suitable for containerized deployment with automatic scaling
-
-Choose the platform that best suits your needs. The application is platform-agnostic and can be hosted anywhere that supports Python web applications.
+See `DEPLOYMENT.md` for cloud, container, and build configuration options, including required build args (`VITE_API_URL`, `VITE_WS_URL`, `VITE_GOOGLE_MAPS_API_KEY`) and environment variables (`TAVILY_API_KEY`, `AZURE_OPENAI_KEY`, `AZURE_OPENAI_ENDPOINT`, optional `ANTHROPIC_API_KEY`, optional `MONGODB_URI`).
 
 ## Contributing
 
@@ -385,6 +352,8 @@ Choose the platform that best suits your needs. The application is platform-agno
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+For code structure, style, and workflows, see `AGENTS.md`.
 
 ## License
 
