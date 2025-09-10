@@ -103,7 +103,8 @@ class Curator:
                             "company": {"initial": 0, "kept": 0},
                             "industry": {"initial": 0, "kept": 0},
                             "financial": {"initial": 0, "kept": 0},
-                            "news": {"initial": 0, "kept": 0}
+                            "news": {"initial": 0, "kept": 0},
+                            "auditor": {"initial": 0, "kept": 0},
                         }
                     }
                 )
@@ -119,6 +120,7 @@ class Curator:
         
         data_types = {
             'financial_data': ('💰 Financial', 'financial'),
+            'auditor_data': ('🛒 E-commerce', 'auditor'),
             'news_data': ('📰 News', 'news'),
             'industry_data': ('🏭 Industry', 'industry'),
             'company_data': ('🏢 Company', 'company')
@@ -224,7 +226,8 @@ class Curator:
                             "company": doc_counts.get('company_data', {"initial": 0, "kept": 0}),
                             "industry": doc_counts.get('industry_data', {"initial": 0, "kept": 0}),
                             "financial": doc_counts.get('financial_data', {"initial": 0, "kept": 0}),
-                            "news": doc_counts.get('news_data', {"initial": 0, "kept": 0})
+                            "news": doc_counts.get('news_data', {"initial": 0, "kept": 0}),
+                            "auditor": doc_counts.get('auditor_data', {"initial": 0, "kept": 0}),
                         }
                     }
                 )

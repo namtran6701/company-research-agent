@@ -148,6 +148,7 @@ export const resetResearch = (
         company: false,
         industry: false,
         financial: false,
+        auditor: false,
         news: false
       }
     });

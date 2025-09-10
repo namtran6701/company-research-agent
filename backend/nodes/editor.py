@@ -78,6 +78,7 @@ class Editor:
             'company': 'company_briefing',
             'industry': 'industry_briefing',
             'financial': 'financial_briefing',
+            'auditor': 'auditor_briefing',
             'news': 'news_briefing'
         }
 
@@ -256,6 +257,9 @@ Strictly enforce this EXACT document structure:
 ## Financial Overview
 [Financial content with ### subsections]
 
+## E-commerce Audit
+[Audit content including the markdown scorecard table and recommendations]
+
 ## News
 [News content with ### subsections]
 
@@ -316,6 +320,9 @@ Strictly enforce this EXACT document structure:
 ## Financial Overview
 [Financial content with ### subsections]
 
+## E-commerce Audit
+[Audit content including the markdown scorecard table and recommendations]
+
 ## News
 [News content with ### subsections]
 
@@ -328,6 +335,7 @@ Critical rules:
    - ## Company Overview
    - ## Industry Overview
    - ## Financial Overview
+   - ## E-commerce Audit
    - ## News
    - ## References
 3. NO OTHER ## HEADERS ARE ALLOWED
@@ -338,6 +346,7 @@ Critical rules:
 8. Format all bullet points with *
 9. Add one blank line before and after each section/list
 10. DO NOT CHANGE the format of the references section
+11. Preserve any markdown tables exactly as provided, especially the E-commerce Scorecard
 
 Return the polished report in flawless markdown format. No explanation.
 

@@ -67,6 +67,7 @@ function App() {
       company: false,
       industry: false,
       financial: false,
+      auditor: false,
       news: false,
     },
   });
@@ -160,6 +161,7 @@ function App() {
           company: false,
           industry: false,
           financial: false,
+          auditor: false,
           news: false,
         },
       });
@@ -609,6 +611,7 @@ function App() {
                 company: false,
                 industry: false,
                 financial: false,
+                auditor: false,
                 news: false,
               },
             }));
