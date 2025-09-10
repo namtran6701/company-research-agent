@@ -3,6 +3,7 @@ import os
 from typing import Any, Dict
 
 from langchain_core.messages import AIMessage
+from anthropic import AsyncAnthropic
 from openai import AsyncAzureOpenAI
 
 from ..classes import ResearchState
@@ -19,20 +20,37 @@ class Editor:
     """Compiles individual section briefings into a cohesive final report."""
     
     def __init__(self) -> None:
-        self.azure_openai_key = os.getenv("AZURE_OPENAI_KEY")
-        self.azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        # Try to initialize Anthropic Claude first (preferred for Editor)
+        self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        self.anthropic_client = None
         
-        if not self.azure_openai_key:
-            raise ValueError("AZURE_OPENAI_KEY environment variable is not set")
-        if not self.azure_openai_endpoint:
-            raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set")
+        if self.anthropic_api_key:
+            try:
+                self.anthropic_client = AsyncAnthropic(
+                    api_key=self.anthropic_api_key
+                )
+                self.use_claude = True
+                self.model = "claude-sonnet-4-20250514"
+                logger.info("Editor initialized with Claude Sonnet 4")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Claude client: {e}")
         
-        # Configure Azure OpenAI
-        self.openai_client = AsyncAzureOpenAI(
-            api_key=self.azure_openai_key,
-            azure_endpoint=self.azure_openai_endpoint,
-            api_version="2025-04-01-preview"
-        )
+        # Fallback to Azure OpenAI if Claude is not available
+        if not self.anthropic_client:
+            self.azure_openai_key = os.getenv("AZURE_OPENAI_KEY")
+            self.azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+            
+            if not self.azure_openai_key or not self.azure_openai_endpoint:
+                raise ValueError("Neither ANTHROPIC_API_KEY nor Azure OpenAI credentials are available")
+            
+            self.openai_client = AsyncAzureOpenAI(
+                api_key=self.azure_openai_key,
+                azure_endpoint=self.azure_openai_endpoint,
+                api_version="2025-04-01-preview"
+            )
+            self.use_claude = False
+            self.model = "gpt-4.1"
+            logger.info("Editor initialized with Azure OpenAI GPT-4.1 (fallback)")
         
         # Initialize context dictionary for use across methods
         self.context = {
@@ -264,22 +282,38 @@ Strictly enforce this EXACT document structure:
 Return the report in clean markdown format. No explanations or commentary."""
         
         try:
-            response = await self.openai_client.chat.completions.create(
-                model="gpt-4.1",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert report editor that compiles research briefings into comprehensive company reports."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0,
-                stream=False
-            )
-            initial_report = response.choices[0].message.content.strip()
+            if self.use_claude:
+                response = await self.anthropic_client.messages.create(
+                    model=self.model,
+                    system="You are an expert report editor that compiles research briefings into comprehensive company reports.",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0,
+                    max_tokens=4000,
+                    stream=False
+                )
+                initial_report = response.content[0].text.strip()
+            else:
+                response = await self.openai_client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert report editor that compiles research briefings into comprehensive company reports."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0,
+                    stream=False
+                )
+                initial_report = response.choices[0].message.content.strip()
             
             # Append the references section after LLM processing
             if reference_text:
@@ -348,41 +382,115 @@ Return the polished report in flawless markdown format. No explanation.
 Return the cleaned report in flawless markdown format. No explanations or commentary."""
         
         try:
-            response = await self.openai_client.chat.completions.create(
-                model="gpt-4.1", 
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert markdown formatter that ensures consistent document structure."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0,
-                stream=True
-            )
-            
-            accumulated_text = ""
-            buffer = ""
-            
-            async for chunk in response:
-                # Safe access to chunk data
-                if not chunk.choices:
-                    continue
+            if self.use_claude:
+                # Use the official streaming method with context manager
+                async with self.anthropic_client.messages.stream(
+                    model=self.model,
+                    system="You are an expert markdown formatter that ensures consistent document structure.",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0,
+                    max_tokens=4000,
+                ) as stream:
+                    buffer = ""
                     
-                choice = chunk.choices[0]
-                chunk_text = choice.delta.content if hasattr(choice.delta, 'content') else None
+                    async for event in stream:
+                        # Handle text events (the correct event type per docs)
+                        if event.type == "text":
+                            chunk_text = event.text
+                            
+                            if chunk_text:
+                                buffer += chunk_text
+                                
+                                # Send chunks more frequently for better streaming experience
+                                if len(buffer) >= 50 or any(delimiter in buffer for delimiter in ['\n\n', '. ', '! ', '? ', '\n#']):
+                                    if websocket_manager := state.get('websocket_manager'):
+                                        if job_id := state.get('job_id'):
+                                            await websocket_manager.send_status_update(
+                                                job_id=job_id,
+                                                status="report_chunk",
+                                                message="Formatting final report",
+                                                result={
+                                                    "chunk": buffer,
+                                                    "step": "Editor"
+                                                }
+                                            )
+                                    buffer = ""
+                        elif event.type == "content_block_stop":
+                            # Send any remaining buffer when content block stops
+                            if buffer:
+                                if websocket_manager := state.get('websocket_manager'):
+                                    if job_id := state.get('job_id'):
+                                        await websocket_manager.send_status_update(
+                                            job_id=job_id,
+                                            status="report_chunk",
+                                            message="Formatting final report",
+                                            result={
+                                                "chunk": buffer,
+                                                "step": "Editor"
+                                            }
+                                        )
+                                buffer = ""
                 
-                if chunk_text:
-                    accumulated_text += chunk_text
-                    buffer += chunk_text
+                # Get the final accumulated message
+                final_message = await stream.get_final_message()
+                return final_message.content[0].text.strip()
+            else:
+                # Azure OpenAI streaming fallback
+                response = await self.openai_client.chat.completions.create(
+                    model=self.model, 
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert markdown formatter that ensures consistent document structure."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0,
+                    stream=True
+                )
+                
+                accumulated_text = ""
+                buffer = ""
+                
+                async for chunk in response:
+                    # Safe access to chunk data
+                    if not chunk.choices:
+                        continue
+                        
+                    choice = chunk.choices[0]
+                    chunk_text = choice.delta.content if hasattr(choice.delta, 'content') else None
                     
-                    # Send chunks more frequently for better streaming experience
-                    if len(buffer) >= 50 or any(delimiter in buffer for delimiter in ['\n\n', '. ', '! ', '? ', '\n#']):
+                    if chunk_text:
+                        accumulated_text += chunk_text
+                        buffer += chunk_text
+                        
+                        # Send chunks more frequently for better streaming experience
+                        if len(buffer) >= 50 or any(delimiter in buffer for delimiter in ['\n\n', '. ', '! ', '? ', '\n#']):
+                            if websocket_manager := state.get('websocket_manager'):
+                                if job_id := state.get('job_id'):
+                                    await websocket_manager.send_status_update(
+                                        job_id=job_id,
+                                        status="report_chunk",
+                                        message="Formatting final report",
+                                        result={
+                                            "chunk": buffer,
+                                            "step": "Editor"
+                                        }
+                                    )
+                            buffer = ""
+                    
+                    # Handle completion and send any remaining buffer
+                    if hasattr(choice, 'finish_reason') and choice.finish_reason == "stop":
                         if websocket_manager := state.get('websocket_manager'):
-                            if job_id := state.get('job_id'):
+                            if buffer and (job_id := state.get('job_id')):
                                 await websocket_manager.send_status_update(
                                     job_id=job_id,
                                     status="report_chunk",
@@ -392,24 +500,9 @@ Return the cleaned report in flawless markdown format. No explanations or commen
                                         "step": "Editor"
                                     }
                                 )
-                        buffer = ""
+                        break
                 
-                # Handle completion and send any remaining buffer
-                if hasattr(choice, 'finish_reason') and choice.finish_reason == "stop":
-                    if websocket_manager := state.get('websocket_manager'):
-                        if buffer and (job_id := state.get('job_id')):
-                            await websocket_manager.send_status_update(
-                                job_id=job_id,
-                                status="report_chunk",
-                                message="Formatting final report",
-                                result={
-                                    "chunk": buffer,
-                                    "step": "Editor"
-                                }
-                            )
-                    break
-            
-            return (accumulated_text or "").strip()
+                return (accumulated_text or "").strip()
         except Exception as e:
             logger.error(f"Error in formatting: {e}")
             return (content or "").strip()
