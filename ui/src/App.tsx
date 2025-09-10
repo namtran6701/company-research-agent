@@ -987,15 +987,13 @@ function App() {
           <div className="max-w-5xl mx-auto text-center space-y-6">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight animate-fade-in">
-                While Markets Shift, You
+                While Markets Shift, Will Your Playbook <span className="text-[#FF6B6B] font-bold">Hold Up?</span>
                 <br />
-                <span className="text-primary font-bold">Research</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed animate-fade-in">
-                Your competitor just launched a new strategy. Industry trends
-                shifted overnight. You research and analyze in minutes while
-                others take weeks.
+                Your competitor just launched a new strategy. Consumer trends flipped overnight. Are you confident your eCommerce strategy can keep pace?
               </p>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed animate-fade-in">Test it with the <strong className="text-[#FF6B6B]">Sales Factory AI eCommerce Audit Tool</strong></p>
             </div>
 
             {/* Mobile CTA */}
@@ -1022,34 +1020,44 @@ function App() {
           {/* Feature Cards - Compact Grid */}
           <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-5xl mx-auto">
             <Card className="p-6 bg-card/90 backdrop-blur-sm border-border text-center hover-scale animate-fade-in">
-              <Zap className="h-10 w-10 text-primary mx-auto mb-3" />
+              <Zap className="h-10 w-10 text-primary mx-auto mb-3 animate-bounce" style={{animationDuration: '3s'}} />
               <h3 className="text-lg font-semibold text-foreground mb-2">
                 Lightning Fast
               </h3>
               <p className="text-muted-foreground text-sm">
-                Multi-agent system processes data in parallel for rapid results
+              Multi-agent AI scans and analyzes in minutes while others take weeks
               </p>
             </Card>
 
             <Card className="p-6 bg-card/90 backdrop-blur-sm border-border text-center hover-scale animate-fade-in">
-              <Users className="h-10 w-10 text-primary mx-auto mb-3" />
+              <Users className="h-10 w-10 text-primary mx-auto mb-3 animate-bounce" style={{animationDuration: '3s'}} />
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Multi-Agent AI
+                Specialized Intelligence
               </h3>
               <p className="text-muted-foreground text-sm">
-                Specialized agents for company, financial, and market analysis
+              Agents built for company, and market insights - tailored to eCommerce
               </p>
             </Card>
 
             <Card className="p-6 bg-card/90 backdrop-blur-sm border-border text-center hover-scale animate-fade-in">
-              <Search className="h-10 w-10 text-primary mx-auto mb-3" />
+              <Search className="h-10 w-10 text-primary mx-auto mb-3 animate-bounce" style={{animationDuration: '3s'}} />
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Comprehensive Reports
+                Actionable Results
               </h3>
               <p className="text-muted-foreground text-sm">
-                Detailed analysis with actionable insights and recommendations
+                Get a clear audit with recommendations to strengthen your next move
               </p>
             </Card>
+          </div>
+          
+          {/* Call to Action Section */}
+          <div className="text-center mt-12 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed animate-fade-in">
+              Don't wait for the market to expose the gaps.
+            </p>
+            <p className="text-lg md:text-xl text-foreground leading-relaxed animate-fade-in mt-2">
+              <strong>Run your audit today.</strong>
+            </p>
           </div>
         </div>
       </section>
