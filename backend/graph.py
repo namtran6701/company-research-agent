@@ -13,7 +13,7 @@ from .nodes.editor import Editor
 from .nodes.enricher import Enricher
 from .nodes.researchers import (
     CompanyAnalyzer,
-    FinancialAnalyst,
+    FinancialAnalyst,  # NOTE: temporarily disabled in workflow wiring below
     IndustryAnalyzer,
     NewsScanner,
     OnlineEcommerceAuditor,
@@ -47,7 +47,8 @@ class Graph:
     def _init_nodes(self):
         """Initialize all workflow nodes"""
         self.ground = GroundingNode()
-        self.financial_analyst = FinancialAnalyst()
+        # FINANCIAL TEMP DISABLED: initialize but do not wire into graph
+        # self.financial_analyst = FinancialAnalyst()
         self.news_scanner = NewsScanner()
         self.industry_analyst = IndustryAnalyzer()
         self.company_analyst = CompanyAnalyzer()
@@ -64,7 +65,8 @@ class Graph:
         
         # Add nodes with their respective processing functions
         self.workflow.add_node("grounding", self.ground.run)
-        self.workflow.add_node("financial_analyst", self.financial_analyst.run)
+        # FINANCIAL TEMP DISABLED
+        # self.workflow.add_node("financial_analyst", self.financial_analyst.run)
         self.workflow.add_node("news_scanner", self.news_scanner.run)
         self.workflow.add_node("industry_analyst", self.industry_analyst.run)
         self.workflow.add_node("company_analyst", self.company_analyst.run)
@@ -80,7 +82,7 @@ class Graph:
         self.workflow.set_finish_point("editor")
         
         research_nodes = [
-            "financial_analyst",
+            # "financial_analyst",  # FINANCIAL TEMP DISABLED
             "news_scanner",
             "industry_analyst",
             "company_analyst",

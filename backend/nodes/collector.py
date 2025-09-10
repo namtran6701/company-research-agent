@@ -22,7 +22,7 @@ class Collector:
         
         # Check each type of research data
         research_types = {
-            'financial_data': '💰 Financial',
+            # 'financial_data': '💰 Financial',  # TEMP DISABLED
             'auditor_data': '🛒 E-commerce Audit',
             'news_data': '📰 News',
             'industry_data': '🏭 Industry',

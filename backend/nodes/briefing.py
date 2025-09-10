@@ -290,7 +290,7 @@ Analyze the following documents and extract key information. Provide only the br
         
         # Mapping of curated data fields to briefing categories
         categories = {
-            'financial_data': ("financial", "financial_briefing"),
+            # 'financial_data': ("financial", "financial_briefing"),  # TEMP DISABLED
             'news_data': ("news", "news_briefing"),
             'industry_data': ("industry", "industry_briefing"),
             'company_data': ("company", "company_briefing"),

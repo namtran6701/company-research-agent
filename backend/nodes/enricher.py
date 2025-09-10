@@ -137,7 +137,7 @@ class Enricher:
 
         # Process each type of curated data
         data_types = {
-            'financial_data': ('💰 Financial', 'financial'),
+            # 'financial_data': ('💰 Financial', 'financial'),  # TEMP DISABLED
             'auditor_data': ('🛒 E-commerce', 'auditor'),
             'news_data': ('📰 News', 'news'),
             'industry_data': ('🏭 Industry', 'industry'),

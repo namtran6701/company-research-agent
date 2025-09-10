@@ -102,7 +102,7 @@ class Curator:
                         "doc_counts": {
                             "company": {"initial": 0, "kept": 0},
                             "industry": {"initial": 0, "kept": 0},
-                            "financial": {"initial": 0, "kept": 0},
+                            # "financial": {"initial": 0, "kept": 0},  # TEMP DISABLED
                             "news": {"initial": 0, "kept": 0},
                             "auditor": {"initial": 0, "kept": 0},
                         }
@@ -119,7 +119,7 @@ class Curator:
         msg = [f"🔍 Curating research data for {company}"]
         
         data_types = {
-            'financial_data': ('💰 Financial', 'financial'),
+            # 'financial_data': ('💰 Financial', 'financial'),  # TEMP DISABLED
             'auditor_data': ('🛒 E-commerce', 'auditor'),
             'news_data': ('📰 News', 'news'),
             'industry_data': ('🏭 Industry', 'industry'),
@@ -225,7 +225,7 @@ class Curator:
                         "doc_counts": {
                             "company": doc_counts.get('company_data', {"initial": 0, "kept": 0}),
                             "industry": doc_counts.get('industry_data', {"initial": 0, "kept": 0}),
-                            "financial": doc_counts.get('financial_data', {"initial": 0, "kept": 0}),
+                            # "financial": doc_counts.get('financial_data', {"initial": 0, "kept": 0}),  # TEMP DISABLED
                             "news": doc_counts.get('news_data', {"initial": 0, "kept": 0}),
                             "auditor": doc_counts.get('auditor_data', {"initial": 0, "kept": 0}),
                         }

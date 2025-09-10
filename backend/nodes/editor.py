@@ -77,7 +77,7 @@ class Editor:
         briefing_keys = {
             'company': 'company_briefing',
             'industry': 'industry_briefing',
-            'financial': 'financial_briefing',
+            # 'financial': 'financial_briefing',  # TEMP DISABLED
             'auditor': 'auditor_briefing',
             'news': 'news_briefing'
         }
@@ -232,6 +232,7 @@ class Editor:
         industry = self.context["industry"]
         hq_location = self.context["hq_location"]
         
+        # NOTE: Financial Overview section temporarily disabled
         prompt = f"""You are compiling a comprehensive ecommerce report about {company}.
 
 Compiled briefings:
@@ -253,9 +254,6 @@ Strictly enforce this EXACT document structure:
 
 ## Industry Overview
 [Industry content with ### subsections]
-
-## Financial Overview
-[Financial content with ### subsections]
 
 ## E-commerce Audit
 [Audit content including the markdown scorecard table and recommendations]
@@ -299,6 +297,7 @@ Return the report in clean markdown format. No explanations or commentary."""
         industry = self.context["industry"]
         hq_location = self.context["hq_location"]
         
+        # NOTE: Financial Overview section temporarily disabled
         prompt = f"""You are an expert briefing editor. You are given a report on {company}.
 
 Current report:
@@ -317,9 +316,6 @@ Strictly enforce this EXACT document structure:
 ## Industry Overview
 [Industry content with ### subsections]
 
-## Financial Overview
-[Financial content with ### subsections]
-
 ## E-commerce Audit
 [Audit content including the markdown scorecard table and recommendations]
 
@@ -334,12 +330,11 @@ Critical rules:
 2. The document MUST ONLY use these exact ## headers in this order:
    - ## Company Overview
    - ## Industry Overview
-   - ## Financial Overview
    - ## E-commerce Audit
    - ## News
    - ## References
 3. NO OTHER ## HEADERS ARE ALLOWED
-4. Use ### for subsections in Company/Industry/Financial sections
+4. Use ### for subsections in Company/Industry sections
 5. News section should only use bullet points (*), never headers
 6. Never use code blocks (```)
 7. Never use more than one blank line between sections

@@ -37,12 +37,11 @@ const ResearchQueries: React.FC<ResearchQueriesProps> = ({
         isExpanded ? 'mt-4 max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="grid grid-cols-2 gap-4">
-          {['company', 'industry', 'financial', 'auditor', 'news'].map((category) => {
+          {['company', 'industry', 'auditor', 'news'].map((category) => {
             // Map display category to the prefix used in streaming/query categories
             const prefixMap: Record<string, string> = {
               company: 'company',
               industry: 'industry',
-              financial: 'financial',
               auditor: 'ecommerce', // matches 'ecommerce_auditor'
               news: 'news',
             };
@@ -84,7 +83,7 @@ const ResearchQueries: React.FC<ResearchQueriesProps> = ({
       
       {!isExpanded && (
         <div className="mt-2 text-sm text-gray-600">
-          {queries.length} queries generated across {['company', 'industry', 'financial', 'auditor', 'news'].length} categories
+          {queries.length} queries generated across {['company', 'industry', 'auditor', 'news'].length} categories
         </div>
       )}
     </div>
