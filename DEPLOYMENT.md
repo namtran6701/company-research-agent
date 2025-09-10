@@ -470,6 +470,45 @@ echo "Deployment complete! Visit: https://$APP_URL"
 - Log Analytics: $2-5 (based on ingestion)
 - **Total**: ~$22-40/month
 
+## Registry Maintenance
+
+### Automated Cleanup Script
+
+A `cleanup-registry.sh` script is provided for regular maintenance:
+
+```bash
+# Make executable and run
+chmod +x cleanup-registry.sh
+./cleanup-registry.sh
+```
+
+**What it does**:
+- Keeps last 7 days of images (safe for rollbacks)
+- Removes images older than 7 days
+- Cleans untagged manifests (frees actual storage)
+- Shows before/after storage usage
+
+**Recommended schedule**:
+- **Weekly**: Run cleanup script
+- **Before major deployments**: Quick cleanup if storage >80%
+- **Monthly**: Review retention policy (adjust from 7d if needed)
+
+**Manual cleanup commands**:
+```bash
+# Check current usage
+az acr show-usage --resource-group sf-company-research --name sfcompanyresearchacr --output table
+
+# Clean old versions (keep last 7 days)
+az acr run --registry sfcompanyresearchacr \
+  --cmd 'acr purge --filter "company-research:v*" --ago 7d' \
+  /dev/null
+
+# Clean untagged manifests (matches retention period)
+az acr run --registry sfcompanyresearchacr \
+  --cmd 'acr purge --filter "company-research:.*" --untagged --ago 7d' \
+  /dev/null
+```
+
 ## Next Steps
 
 1. **Set up CI/CD pipeline** using GitHub Actions or Azure DevOps
