@@ -393,8 +393,8 @@ Return the cleaned report in flawless markdown format. No explanations or commen
                             "content": prompt
                         }
                     ],
-                    temperature=0,
-                    max_tokens=4000,
+                    temperature=0.3,
+                    max_tokens=10000,
                 ) as stream:
                     buffer = ""
                     
