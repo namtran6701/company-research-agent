@@ -256,51 +256,51 @@ const SplitView: React.FC<SplitViewProps> = ({
         role="banner"
       >
         
-        <nav className="split-view-header-buttons ml-auto flex items-center gap-2" role="toolbar" aria-label="Report actions">
+        <nav className="split-view-header-buttons ml-auto flex items-center gap-3" role="toolbar" aria-label="Report actions">
           <button
             onClick={openChat}
-            className="inline-flex items-center gap-2 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="inline-flex items-center gap-3 px-5 py-3 rounded-full text-white bg-gradient-primary shadow-md hover:shadow-lg transition-all duration-300 focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label="Open chat panel to ask questions about the report"
             aria-pressed={chatOpen}
             title="Ask follow-up questions"
           >
-            <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            <span className="button-text text-sm leading-none">Ask Follow-Up Questions</span>
+            <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            <span className="button-text text-sm font-semibold leading-none">Ask Follow-Up Questions</span>
           </button>
           
           <button
             onClick={onCopyToClipboard}
-            className="inline-flex items-center justify-center p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary text-primary bg-white hover:bg-primary/5 transition-all duration-300 focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label="Copy report to clipboard"
             title="Copy to clipboard"
           >
             {isCopied ? (
-              <div className="h-4 w-4 text-white" aria-label="Copied successfully">✓</div>
+              <div className="h-5 w-5 text-primary" aria-label="Copied successfully">✓</div>
             ) : (
-              <Copy className="h-4 w-4" aria-hidden="true" />
+              <Copy className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
           
           <button
             onClick={onGeneratePdf}
             disabled={isGeneratingPdf}
-            className="inline-flex items-center justify-center p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary text-primary bg-white hover:bg-primary/5 transition-all duration-300 disabled:opacity-50 focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label={isGeneratingPdf ? "Generating PDF..." : "Download report as PDF"}
             title="Download PDF"
           >
             {isGeneratingPdf ? (
-              <div className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full" aria-hidden="true" />
+              <div className="h-5 w-5 animate-spin border-2 border-primary border-t-transparent rounded-full" aria-hidden="true" />
             ) : (
-              <Download className="h-4 w-4" aria-hidden="true" />
+              <Download className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
         </nav>
       </header>
 
       {/* Chat Panel - Mobile Modal or Desktop Left Panel */}
-      {chatOpen && (
-        isMobile ? (
+      {(isMobile ? (
           // Mobile Modal Overlay
+          chatOpen ? (
           <div 
             className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-end"
             onClick={closeChat}
@@ -400,10 +400,14 @@ const SplitView: React.FC<SplitViewProps> = ({
               </div>
             </div>
           </div>
-        ) : (
-          // Desktop Left Panel
-          <aside 
-            className="split-view-chat-panel flex flex-col bg-white border-r border-gray-200 transition-all duration-300 min-h-0 h-full"
+          ) : null)
+        : (
+          // Desktop Left Panel, rendered only when open. No animation.
+          chatOpen ? (
+          <aside
+            className={
+              "split-view-chat-panel flex flex-col bg-white border-r border-gray-200 min-h-0 h-full"
+            }
             style={{ gridColumn: '1' }}
             role="complementary"
             aria-labelledby="desktop-chat-title"
@@ -494,6 +498,7 @@ const SplitView: React.FC<SplitViewProps> = ({
               </form>
             </div>
           </aside>
+          ) : null
         )
       )}
 
